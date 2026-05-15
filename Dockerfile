@@ -16,8 +16,7 @@ RUN chmod -R 777 storage bootstrap/cache
 
 # Создаём .env и устанавливаем зависимости
 RUN cp .env.example .env \
-    && composer install --no-interaction --prefer-dist --optimize-autoloader \
-    && php artisan key:generate
+    && composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
 # Копируем стартовый скрипт и делаем его исполняемым
 COPY start.sh /start.sh
