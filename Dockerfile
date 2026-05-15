@@ -11,16 +11,18 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . /app
 
-# Даём права на запись нужным папкам
+# Права на запись
 RUN chmod -R 777 storage bootstrap/cache
 
-# Создаём .env из .env.example (в нём уже есть APP_KEY=)
-RUN cp .env.example .env
-
-# Устанавливаем зависимости и генерируем ключ
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader \
+# Создаём .env и устанавливаем зависимости
+RUN cp .env.example .env \
+    && composer install --no-interaction --prefer-dist --optimize-autoloader \
     && php artisan key:generate
+
+# Копируем стартовый скрипт и делаем его исполняемым
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 EXPOSE 10000
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=10000"]
+CMD ["/app/start.sh"]
