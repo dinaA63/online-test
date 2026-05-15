@@ -17,10 +17,10 @@ Route::get('/', function () {
     return view('home');
 })->name('home');
 
-// Маршруты аутентификации Breeze
+// Маршруты аутентификации Breeze (включая восстановление пароля)
 require __DIR__.'/auth.php';
 
-// Группа маршрутов для преподавателя (требуется аутентификация и роль teacher)
+// Группа маршрутов для преподавателя
 Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')->group(function () {
     Route::resource('tests', TestController::class);
     Route::get('tests/{test}/questions/create', [QuestionController::class, 'create'])->name('questions.create');
@@ -34,28 +34,15 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
     Route::delete('choices/{choice}', [ChoiceController::class, 'destroy'])->name('choices.destroy');
     Route::get('tests/{test}/statistics', [TestController::class, 'statistics'])->name('tests.statistics');
     Route::get('tests/{test}/export', [TestController::class, 'export'])->name('tests.export');
-    Route::get('/dashboard', [App\Http\Controllers\Teacher\DashboardController::class, 'index'])->name('dashboard');
 });
 
-// Группа маршрутов для студента (требуется аутентификация и роль student)
+// Группа маршрутов для студента
 Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')->group(function () {
     Route::get('tests', [StudentTestController::class, 'index'])->name('tests.index');
     Route::get('tests/{test}', [StudentTestController::class, 'show'])->name('tests.show');
     Route::post('tests/{test}/attempt', [AttemptController::class, 'start'])->name('attempt.start');
     Route::get('attempt/{attempt}', [AttemptController::class, 'show'])->name('attempt.show');
-     Route::post('/attempt/{attempt}/save-answer', [AttemptController::class, 'saveAnswer'])->name('student.attempt.save_answer');
-    Route::post('attempt/{attempt}/answer', [AttemptController::class, 'saveAnswer'])->name('attempt.save_answer');
+    Route::post('attempt/{attempt}/save-answer', [AttemptController::class, 'saveAnswer'])->name('attempt.save_answer');
     Route::post('attempt/{attempt}/submit', [AttemptController::class, 'submit'])->name('attempt.submit');
     Route::get('results', [AttemptController::class, 'history'])->name('results');
-    Route::get('/dashboard', [App\Http\Controllers\Student\DashboardController::class, 'index'])->name('dashboard');
-});
-
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::resource('groups', GroupController::class);
-    Route::get('statistics', [StatisticsController::class, 'index'])->name('statistics');
-});
-Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')->group(function () {
-    Route::get('reviews', [ManualReviewController::class, 'index'])->name('reviews.index');
-    Route::get('reviews/{attempt}', [ManualReviewController::class, 'show'])->name('reviews.show');
-    Route::post('reviews/{attempt}', [ManualReviewController::class, 'review'])->name('reviews.review');
 });

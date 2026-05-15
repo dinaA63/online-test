@@ -10,35 +10,6 @@
         </a>
     </div>
 
-    <!-- Форма фильтра по группам -->
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-body">
-            <form method="GET" action="{{ route('teacher.tests.statistics', $test) }}" class="row g-3 align-items-end">
-                <div class="col-md-5">
-                    <label class="form-label fw-semibold"><i class="fas fa-filter me-1"></i>Фильтр по группе</label>
-                    <select name="group_id" class="form-select">
-                        <option value="">Все пользователи</option>
-                        @foreach(\App\Models\Group::all() as $group)
-                            <option value="{{ $group->id }}" {{ request('group_id') == $group->id ? 'selected' : '' }}>
-                                {{ $group->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-primary w-100 rounded-pill">
-                        <i class="fas fa-search me-1"></i> Применить
-                    </button>
-                </div>
-                <div class="col-md-4 text-md-end">
-                    <a href="{{ route('teacher.tests.export', $test) }}?group_id={{ request('group_id') }}" class="btn btn-outline-success rounded-pill">
-                        <i class="fas fa-download me-1"></i> Экспорт CSV
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Карточки статистики -->
     <div class="row mb-4 g-4">
         <div class="col-md-4">
