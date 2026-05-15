@@ -9,7 +9,8 @@ class AppServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-    URL::forceRootUrl('https://online-test-vyo8.onrender.com');
-    URL::forceScheme('https');
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 }

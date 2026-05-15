@@ -10,10 +10,13 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-->withMiddleware(function (Middleware $middleware) {
-    $middleware->alias([
-        'role' => \App\Http\Middleware\CheckRole::class,
-    ]);
-    $middleware->trustProxies(at: '*');
-})
+    ->withMiddleware(function (Middleware $middleware) {
+        // Алиас для ролей (сохраняем)
+        $middleware->alias([
+            'role' => \App\Http\Middleware\CheckRole::class,
+        ]);
+        
+        // Доверие к прокси (обязательно для HTTPS на Render)
+        $middleware->trustProxies(at: '*');
+    })
     ->create();
