@@ -16,12 +16,12 @@ RUN chmod -R 777 storage bootstrap/cache
 
 # Создаём .env и устанавливаем зависимости
 RUN cp .env.example .env \
-    && composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+    && composer install --no-interaction --prefer-dist --optimize-autoloader \
+    && php artisan key:generate
 
 # Копируем стартовый скрипт и делаем его исполняемым
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 EXPOSE 10000
 
 CMD ["/app/start.sh"]
