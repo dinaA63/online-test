@@ -6,7 +6,9 @@ use App\Http\Controllers\Teacher\QuestionController;
 use App\Http\Controllers\Teacher\ChoiceController;
 use App\Http\Controllers\Student\TestController as StudentTestController;
 use App\Http\Controllers\Student\AttemptController;
-
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 /*
 |--------------------------------------------------------------------------
 | Главная страница
