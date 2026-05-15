@@ -18,7 +18,7 @@ if [ ! -f .env ]; then
     php artisan key:generate
 fi
 
-# Запускаем миграции
+
 php artisan migrate --force
 
 # Очищаем кэш маршрутов и конфигов
