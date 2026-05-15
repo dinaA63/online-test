@@ -21,5 +21,9 @@ fi
 # Запускаем миграции
 php artisan migrate --force
 
-# Запускаем встроенный сервер
+# Очищаем кэш маршрутов и конфигов
+php artisan route:clear
+php artisan config:clear
+
+# Запускаем сервер
 php artisan serve --host=0.0.0.0 --port=10000
