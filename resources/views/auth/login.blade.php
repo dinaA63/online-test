@@ -37,9 +37,9 @@
                         <input class="form-check-input" type="checkbox" name="remember" id="remember">
                         <label class="form-check-label" for="remember">Запомнить меня</label>
                     </div>
-                    @if (Route::has('password.request'))
+                    {{-- @if (Route::has('password.request'))
                         <a href="{{ route('password.request') }}" class="text-decoration-none small">Забыли пароль?</a>
-                    @endif
+                    @endif --}}
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">

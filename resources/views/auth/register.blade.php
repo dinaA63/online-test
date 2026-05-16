@@ -62,18 +62,7 @@
     @error('terms')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
 </div>
 
-<!-- Модальное окно -->
-<div class="modal fade" id="termsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title">Условия обработки персональных данных</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body">
-                @include('auth.terms_content')
-            </div>
-            <div class="modal-footer"><button type="button" class="btn btn-primary" data-bs-dismiss="modal">Закрыть</button></div>
-        </div>
-    </div>
-</div>
+<a href="{{ route('terms') }}" target="_blank">(ознакомиться с условиями)</a>
 
                 <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
                     <i class="fas fa-user-check me-2"></i> Зарегистрироваться

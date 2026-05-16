@@ -79,3 +79,5 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')
     // История результатов
     Route::get('results', [AttemptController::class, 'history'])->name('results');
 });
+Route::get('/terms', [App\Http\Controllers\TermsController::class, 'show'])->name('terms');
+Route::view('/terms', 'auth.terms')->name('terms');
