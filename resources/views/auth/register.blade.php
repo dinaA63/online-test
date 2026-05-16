@@ -57,12 +57,11 @@
     <input type="checkbox" name="terms" id="terms" class="form-check-input @error('terms') is-invalid @enderror" required>
     <label class="form-check-label" for="terms">
         Я согласен на обработку персональных данных 
-        <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">(ознакомиться с условиями)</a>
+        <a href="{{ route('terms') }}" target="_blank">(ознакомиться с условиями)</a>
     </label>
     @error('terms')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
 </div>
 
-<a href="{{ route('terms') }}" target="_blank">(ознакомиться с условиями)</a>
 
                 <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
                     <i class="fas fa-user-check me-2"></i> Зарегистрироваться
