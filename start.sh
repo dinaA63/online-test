@@ -10,10 +10,12 @@ if [ ! -f .env ]; then
     cp .env.example .env
 fi
 
-# Ключевое исправление: отключаем выполнение скриптов при дампе автозагрузки
-composer dump-autoload --optimize --no-scripts
+# Установка зависимостей (скрипты отключены через COMPOSER_NO_SCRIPTS=1 в Render)
+composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Далее всё без изменений
+# Установка doctrine/dbal для изменения колонок
+composer require doctrine/dbal --no-interaction || true
+
 php artisan key:generate --no-interaction --force
 
 sed -i 's|APP_URL=.*|APP_URL=https://online-test-vyo8.onrender.com|g' .env
@@ -21,10 +23,10 @@ if ! grep -q "^ASSET_URL=" .env; then
     echo "ASSET_URL=https://online-test-vyo8.onrender.com" >> .env
 fi
 
-php artisan migrate --force
+php artisan migrate:fresh --force -v
 
-php artisan config:clear
-php artisan route:clear
-php artisan view:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 
 php artisan serve --host=0.0.0.0 --port=${PORT:-10000}

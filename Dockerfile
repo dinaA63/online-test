@@ -14,14 +14,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . /app
 
-# Права на запись
 RUN chmod -R 777 storage bootstrap/cache
-
-# Ключевое изменение: --no-scripts отключает выполнение post-autoload-dump
-RUN cp .env.example .env \
-    && composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts \
-    && composer require doctrine/dbal --no-interaction --no-scripts \
-    && php artisan key:generate
 
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
