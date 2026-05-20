@@ -10,11 +10,7 @@ if [ ! -f .env ]; then
     cp .env.example .env
 fi
 
-# Отключаем все скрипты Composer
-export COMPOSER_NO_SCRIPTS=1
-
-composer install --no-interaction --prefer-dist --optimize-autoloader
-composer require doctrine/dbal --no-interaction --no-scripts || true
+# НИКАКИХ composer install, composer require, composer dump-autoload
 
 php artisan key:generate --no-interaction --force
 

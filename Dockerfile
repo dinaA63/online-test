@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_sqlite pdo_pgsql zip \
     && apt-get clean
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# НЕТ COPY --from=composer
 
 WORKDIR /app
 COPY . /app
