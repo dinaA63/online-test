@@ -7,8 +7,6 @@ chmod -R 777 storage bootstrap/cache
 # Создаём минимальный .env с правильными кавычками
 cat > .env <<EOF
 APP_NAME="Система тестирования"
-APP_ENV=production
-APP_DEBUG=false
 APP_URL=https://online-test-vyo8.onrender.com
 APP_KEY=
 DB_CONNECTION=pgsql
