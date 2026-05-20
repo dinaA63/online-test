@@ -11,6 +11,8 @@ if [ ! -f .env ]; then
 fi
 
 composer dump-autoload --optimize --no-scripts
+
+# Теперь, когда окружение готово (и переменная COMPOSER_NO_SCRIPTS=1 активна), можно установить пакет
 composer require doctrine/dbal --no-interaction || true
 
 php artisan key:generate --no-interaction --force
@@ -20,7 +22,6 @@ if ! grep -q "^ASSET_URL=" .env; then
     echo "ASSET_URL=https://online-test-vyo8.onrender.com" >> .env
 fi
 
-php artisan config:clear
 php artisan migrate:fresh --force -v
 
 php artisan config:cache
