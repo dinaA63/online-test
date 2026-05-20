@@ -1,4 +1,5 @@
 FROM php:8.4-cli
+ENV COMPOSER_NO_SCRIPTS=1
 
 RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
@@ -14,12 +15,10 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . /app
 
-# Права на запись
 RUN chmod -R 777 storage bootstrap/cache
 
-# Ключевое изменение: --no-scripts отключает выполнение post-autoload-dump
 RUN cp .env.example .env \
-    && composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts \
+    && composer install --no-interaction --prefer-dist --optimize-autoloader \
     && php artisan key:generate
 
 COPY start.sh /app/start.sh
