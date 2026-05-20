@@ -20,7 +20,7 @@ ENV COMPOSER_MEMORY_LIMIT=-1
 ENV COMPOSER_NO_SCRIPTS=1
 
 # Устанавливаем production-зависимости (без dev-пакетов)
-RUN composer install --no-dev --no-scripts --no-interaction --prefer-dist --optimize-autoloader
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
 # Теперь копируем остальной код
 COPY . /app
