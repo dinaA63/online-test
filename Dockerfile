@@ -14,7 +14,6 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . /app
 
-# Только права
 RUN chmod -R 777 storage bootstrap/cache
 
 COPY start.sh /app/start.sh
