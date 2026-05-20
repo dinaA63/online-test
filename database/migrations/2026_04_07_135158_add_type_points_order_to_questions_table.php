@@ -9,9 +9,9 @@ return new class extends Migration
     public function up()
     {
         Schema::table('questions', function (Blueprint $table) {
-            if (!Schema::hasColumn('questions', 'type')) {
-                $table->enum('type', ['single_choice', 'multiple_choice', 'text'])->default('single_choice')->after('text');
-            }
+if (!Schema::hasColumn('questions', 'type')) {
+    $table->string('type')->default('single_choice')->after('text');
+}
             if (!Schema::hasColumn('questions', 'points')) {
                 $table->integer('points')->default(1)->after('type');
             }
