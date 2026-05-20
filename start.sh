@@ -3,28 +3,40 @@ set -e
 
 echo "=== Starting deployment script ==="
 
-# Права уже установлены в Dockerfile, но на всякий случай
 chmod -R 777 storage bootstrap/cache
 
-# Генерируем APP_KEY, если .env нет (на самом деле он уже должен быть)
-if [ ! -f .env ]; then
-    cp .env.example .env
-    php artisan key:generate --no-interaction --force
+# Создаём свежий .env из .env.example, убираем кавычки и лишнее
+if [ ! -f .env.example ]; then
+    echo "Ошибка: .env.example не найден"
+    exit 1
 fi
 
-# Устанавливаем APP_URL и ASSET_URL (можно и в .env руками)
-sed -i 's|APP_URL=.*|APP_URL=https://online-test-vyo8.onrender.com|g' .env
-if ! grep -q "^ASSET_URL=" .env; then
-    echo "ASSET_URL=https://online-test-vyo8.onrender.com" >> .env
-fi
+# Удаляем старый .env, если он есть (чтобы избежать накопления мусора)
+rm -f .env
 
-# Запускаем миграции (не fresh, чтобы не удалять данные)
-php artisan migrate --force -v
+# Копируем чистый .env.example
+cp .env.example .env
 
-# Кэшируем конфигурацию и маршруты
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+# Принудительно устанавливаем APP_URL (убираем кавычки, удаляем пробелы)
+sed -i '/^APP_URL=/d' .env
+echo "APP_URL=https://online-test-vyo8.onrender.com" >> .env
 
-# Запускаем сервер
+# Устанавливаем ASSET_URL отдельно, после APP_URL, с новой строки
+sed -i '/^ASSET_URL=/d' .env
+echo "ASSET_URL=https://online-test-vyo8.onrender.com" >> .env
+
+# Убираем кавычки в APP_NAME, если они есть, и удаляем лишние символы
+sed -i 's/^APP_NAME="\?\([^"]*\)"\?/APP_NAME=\1/' .env
+
+# Генерируем ключ
+php artisan key:generate --no-interaction --force
+
+# Миграции
+php artisan migrate --force
+
+# Очистка кэша
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+
 php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
