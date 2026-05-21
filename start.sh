@@ -8,7 +8,9 @@ chmod -R 777 storage bootstrap/cache
 cat > .env <<EOF
 APP_NAME="Система тестирования"
 APP_URL=https://online-test-vyo8.onrender.com
-APP_KEY=
+APP_KEY=base64:664ICFDmUuh73ZkI3KQg4vuV7kOhKjZMsQpakEZe52M=
+APP_DEBUG=true
+APP_ENV=local
 DB_CONNECTION=pgsql
 DB_URL=postgresql://postgres.ixyjygbbyuyarbznaifh:dinAgodd5054@aws-0-eu-west-1.pooler.supabase.com:5432/postgres
 EOF
