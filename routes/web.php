@@ -81,3 +81,13 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')
 });
 Route::get('/terms', [App\Http\Controllers\TermsController::class, 'show'])->name('terms');
 Route::view('/terms', 'auth.terms')->name('terms');
+
+
+Route::get('/db-test', function () {
+    try {
+        DB::connection()->getPdo();
+        return 'Database connected successfully!';
+    } catch (\Exception $e) {
+        return 'Database error: ' . $e->getMessage();
+    }
+});
