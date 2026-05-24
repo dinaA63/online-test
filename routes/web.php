@@ -38,7 +38,6 @@ Route::get('/', function () {
 |--------------------------------------------------------------------------
 | Маршруты аутентификации (Breeze)
 |--------------------------------------------------------------------------
-| Включают регистрацию, вход, восстановление пароля и подтверждение email.
 */
 require __DIR__.'/auth.php';
 
@@ -66,9 +65,14 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
     Route::put('choices/{choice}', [ChoiceController::class, 'update'])->name('choices.update');
     Route::delete('choices/{choice}', [ChoiceController::class, 'destroy'])->name('choices.destroy');
 
-    // Статистика и экспорт
+    // Статистика и экспорт (для конкретного теста)
     Route::get('tests/{test}/statistics', [TestController::class, 'statistics'])->name('tests.statistics');
     Route::get('tests/{test}/export', [TestController::class, 'export'])->name('tests.export');
+
+    // Ручная проверка ответов
+    Route::get('reviews', [\App\Http\Controllers\Teacher\ManualReviewController::class, 'index'])->name('reviews.index');
+    Route::get('reviews/{attempt}', [\App\Http\Controllers\Teacher\ManualReviewController::class, 'show'])->name('reviews.show');
+    Route::post('reviews/{attempt}', [\App\Http\Controllers\Teacher\ManualReviewController::class, 'review'])->name('reviews.review');
 });
 
 /*
@@ -78,6 +82,7 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
 */
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('users', \App\Http\Controllers\Admin\UserController::class)->except(['create', 'store', 'show']);
+    Route::resource('groups', \App\Http\Controllers\Admin\GroupController::class)->except(['show']);  // ← добавлено
     Route::get('statistics', [\App\Http\Controllers\Admin\StatisticsController::class, 'index'])->name('statistics');
     Route::get('statistics/export-csv', [\App\Http\Controllers\Admin\StatisticsController::class, 'exportCsv'])->name('statistics.export.csv');
     Route::get('statistics/export-excel', [\App\Http\Controllers\Admin\StatisticsController::class, 'exportExcel'])->name('statistics.export.excel');
@@ -99,19 +104,12 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')->group(function () {
-    // Список тестов
     Route::get('tests', [StudentTestController::class, 'index'])->name('tests.index');
-    // Страница информации о тесте
     Route::get('tests/{test}', [StudentTestController::class, 'show'])->name('tests.show');
-    // Начать тест
     Route::post('tests/{test}/attempt', [AttemptController::class, 'start'])->name('attempt.start');
-    // Страница прохождения теста
     Route::get('attempt/{attempt}', [AttemptController::class, 'show'])->name('attempt.show');
-    // Сохранить ответ (автосохранение)
     Route::post('attempt/{attempt}/save-answer', [AttemptController::class, 'saveAnswer'])->name('attempt.save_answer');
-    // Завершить тест
     Route::post('attempt/{attempt}/submit', [AttemptController::class, 'submit'])->name('attempt.submit');
-    // История результатов
     Route::get('results', [AttemptController::class, 'history'])->name('results');
 });
 
@@ -121,7 +119,6 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')
 |--------------------------------------------------------------------------
 */
 Route::get('/terms', [App\Http\Controllers\TermsController::class, 'show'])->name('terms');
-// Убрал дублирующий маршрут view, оставил контроллер.
 
 Route::get('/db-test', function () {
     try {
