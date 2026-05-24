@@ -22,51 +22,58 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    @auth
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-user-circle me-1"></i> {{ Auth::user()->name }}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end animate-dropdown">
-                                @if(Auth::user()->role == 'teacher')
-                                    <li><a class="dropdown-item" href="{{ route('teacher.tests.index') }}"><i class="fas fa-tachometer-alt me-2"></i>Мои тесты</a></li>
-                                @else
-                                    <li><a class="dropdown-item" href="{{ route('student.tests.index') }}"><i class="fas fa-list me-2"></i>Тесты</a></li>
-                                    <li><a class="dropdown-item" href="{{ route('student.results') }}"><i class="fas fa-chart-line me-2"></i>Мои результаты</a></li>
-                                @endif
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Выйти
-                                    </a>
-                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">@csrf</form>
-                                </li>
-                            </ul>
-                        </li>
-                    @endauth
-                    @guest
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('login') }}"><i class="fas fa-sign-in-alt me-1"></i>Вход</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('register') }}"><i class="fas fa-user-plus me-1"></i>Регистрация</a>
-                        </li>
-                    @endguest
-                    @auth
-    @if(Auth::user()->role == 'admin')
+<ul class="navbar-nav ms-auto">
+    @auth
+        {{-- Выпадающее меню пользователя --}}
         <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                <i class="fas fa-cog"></i> Администрирование
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-user-circle me-1"></i> {{ Auth::user()->name }}
             </a>
-            <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="{{ route('admin.groups.index') }}"><i class="fas fa-users"></i> Группы</a></li>
-                <li><a class="dropdown-item" href="{{ route('admin.statistics') }}"><i class="fas fa-chart-line"></i> Общая статистика</a></li>
+            <ul class="dropdown-menu dropdown-menu-end animate-dropdown">
+                {{-- Пункты в зависимости от роли --}}
+                @if(Auth::user()->role == 'teacher')
+                    <li><a class="dropdown-item" href="{{ route('teacher.tests.index') }}"><i class="fas fa-tachometer-alt me-2"></i>Мои тесты</a></li>
+                @elseif(Auth::user()->role == 'student')
+                    <li><a class="dropdown-item" href="{{ route('student.tests.index') }}"><i class="fas fa-list me-2"></i>Тесты</a></li>
+                    <li><a class="dropdown-item" href="{{ route('student.results') }}"><i class="fas fa-chart-line me-2"></i>Мои результаты</a></li>
+                @endif
+
+                {{-- Общие пункты --}}
+                <li><a class="dropdown-item" href="{{ route('profile.show') }}"><i class="fas fa-id-card me-2"></i>Профиль</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                        <i class="fas fa-sign-out-alt me-2"></i>Выйти
+                    </a>
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">@csrf</form>
+                </li>
             </ul>
         </li>
-    @endif
-@endauth
+
+        {{-- Административное меню (показывается только admin) --}}
+        @if(Auth::user()->role == 'admin')
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-cog"></i> Администрирование
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end animate-dropdown">
+                    <li><a class="dropdown-item" href="{{ route('admin.users.index') }}"><i class="fas fa-users me-2"></i>Пользователи</a></li>
+                    <li><a class="dropdown-item" href="{{ route('admin.groups.index') }}"><i class="fas fa-layer-group me-2"></i>Группы</a></li>
+                    <li><a class="dropdown-item" href="{{ route('admin.statistics') }}"><i class="fas fa-chart-line me-2"></i>Общая статистика</a></li>
                 </ul>
+            </li>
+        @endif
+    @endauth
+
+    @guest
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('login') }}"><i class="fas fa-sign-in-alt me-1"></i>Вход</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('register') }}"><i class="fas fa-user-plus me-1"></i>Регистрация</a>
+        </li>
+    @endguest
+</ul>
             </div>
         </div>
     </nav>

@@ -39,7 +39,9 @@ require __DIR__.'/auth.php';
 Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')->group(function () {
     // Управление тестами
     Route::resource('tests', TestController::class);
-    
+    // Импорт GIFT
+Route::get('gift/import', [\App\Http\Controllers\Teacher\GiftImportController::class, 'create'])->name('gift.import.create');
+Route::post('gift/import', [\App\Http\Controllers\Teacher\GiftImportController::class, 'store'])->name('gift.import');
     // Управление вопросами
     Route::get('tests/{test}/questions/create', [QuestionController::class, 'create'])->name('questions.create');
     Route::post('tests/{test}/questions', [QuestionController::class, 'store'])->name('questions.store');
@@ -58,6 +60,22 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
     Route::get('tests/{test}/export', [TestController::class, 'export'])->name('tests.export');
 });
 
+/*
+|--------------------------------------------------------------------------
+| Группа маршрутов для преподавателя (role: admin)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::resource('users', \App\Http\Controllers\Admin\UserController::class)->except(['create', 'store', 'show']);
+    Route::get('statistics', [\App\Http\Controllers\Admin\StatisticsController::class, 'index'])->name('statistics');
+    Route::get('statistics/export-csv', [\App\Http\Controllers\Admin\StatisticsController::class, 'exportCsv'])->name('statistics.export.csv');
+    Route::get('statistics/export-excel', [\App\Http\Controllers\Admin\StatisticsController::class, 'exportExcel'])->name('statistics.export.excel');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [\App\Http\Controllers\UserProfileController::class, 'show'])->name('profile.show');
+    Route::post('/profile', [\App\Http\Controllers\UserProfileController::class, 'update'])->name('profile.update');
+});
 /*
 |--------------------------------------------------------------------------
 | Группа маршрутов для студента (role: student)

@@ -74,14 +74,22 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="score-box" style="min-width: 150px;">
-                                <label class="form-label fw-semibold">Баллы (0–{{ $answer->question->points ?? 1 }}):</label>
-                                <input type="number" name="scores[{{ $answer->id }}]"
-                                       class="form-control rounded-pill @error("scores.{$answer->id}") is-invalid @enderror"
-                                       value="{{ old("scores.{$answer->id}", $answer->review_score ?? 0) }}"
-                                       min="0" max="{{ $answer->question->points ?? 1 }}" step="1">
-                                <div class="form-text small">Максимум: {{ $answer->question->points ?? 1 }}</div>
-                            </div>
+                            <div class="score-box" style="min-width: 200px;">
+    <label class="form-label fw-semibold">Баллы (0–{{ $answer->question->points ?? 1 }}):</label>
+    <div class="d-flex align-items-center gap-2">
+        <input type="number" name="scores[{{ $answer->id }}]"
+               class="form-control form-control-sm score-input"
+               value="{{ old("scores.{$answer->id}", $answer->review_score ?? 0) }}"
+               min="0" max="{{ $answer->question->points ?? 1 }}" step="1"
+               style="width:80px;">
+        <button type="button" class="btn btn-sm btn-success set-score" data-score="{{ $answer->question->points ?? 1 }}">
+            Верно
+        </button>
+        <button type="button" class="btn btn-sm btn-danger set-score" data-score="0">
+            Неверно
+        </button>
+    </div>
+</div>
                         </div>
                     </div>
                 @empty
@@ -98,4 +106,19 @@
         </div>
     </form>
 </div>
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.set-score').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const score = this.dataset.score;
+                const input = this.closest('.score-box').querySelector('.score-input');
+                if (input) {
+                    input.value = score;
+                }
+            });
+        });
+    });
+</script>
+@endpush
 @endsection

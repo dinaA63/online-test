@@ -53,6 +53,33 @@
                     @error('role')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                 </div>
 
+                <div class="mb-4" id="group-select" style="display: {{ old('role') == 'student' ? 'block' : 'none' }};">
+    <label for="group_id" class="form-label fw-semibold">Группа (для студентов)</label>
+    <select name="group_id" id="group_id" class="form-select @error('group_id') is-invalid @enderror">
+        <option value="">Без группы</option>
+        @foreach($groups as $group)
+            <option value="{{ $group->id }}" {{ old('group_id') == $group->id ? 'selected' : '' }}>{{ $group->name }}</option>
+        @endforeach
+    </select>
+    @error('group_id')
+        <div class="invalid-feedback">{{ $message }}</div>
+    @enderror
+</div>
+
+<script>
+    // Показывать/скрывать выбор группы в зависимости от роли
+    document.getElementById('role').addEventListener('change', function() {
+        document.getElementById('group-select').style.display = this.value === 'student' ? 'block' : 'none';
+    });
+    // Инициализация при загрузке (если есть old('role'))
+    window.addEventListener('DOMContentLoaded', function() {
+        const role = document.getElementById('role');
+        if (role) {
+            role.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+
                 <div class="mb-3 form-check">
     <input type="checkbox" name="terms" id="terms" class="form-check-input @error('terms') is-invalid @enderror" required>
     <label class="form-check-label" for="terms">
