@@ -6,9 +6,11 @@ use App\Http\Controllers\Teacher\QuestionController;
 use App\Http\Controllers\Teacher\ChoiceController;
 use App\Http\Controllers\Student\TestController as StudentTestController;
 use App\Http\Controllers\Student\AttemptController;
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
 /*
 |--------------------------------------------------------------------------
 | Главная страница
@@ -16,9 +18,18 @@ error_reporting(E_ALL);
 */
 Route::get('/', function () {
     if (auth()->check()) {
-        return auth()->user()->role === 'teacher' 
-            ? redirect()->route('teacher.tests.index') 
-            : redirect()->route('student.tests.index');
+        $role = auth()->user()->role;
+
+        if ($role === 'teacher') {
+            return redirect()->route('teacher.tests.index');
+        }
+
+        if ($role === 'admin') {
+            return redirect()->route('admin.statistics');
+        }
+
+        // Для роли student (и любых других) перенаправляем на список тестов студента
+        return redirect()->route('student.tests.index');
     }
     return view('home');
 })->name('home');
@@ -40,21 +51,21 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
     // Управление тестами
     Route::resource('tests', TestController::class);
     // Импорт GIFT
-Route::get('gift/import', [\App\Http\Controllers\Teacher\GiftImportController::class, 'create'])->name('gift.import.create');
-Route::post('gift/import', [\App\Http\Controllers\Teacher\GiftImportController::class, 'store'])->name('gift.import');
+    Route::get('gift/import', [\App\Http\Controllers\Teacher\GiftImportController::class, 'create'])->name('gift.import.create');
+    Route::post('gift/import', [\App\Http\Controllers\Teacher\GiftImportController::class, 'store'])->name('gift.import');
     // Управление вопросами
     Route::get('tests/{test}/questions/create', [QuestionController::class, 'create'])->name('questions.create');
     Route::post('tests/{test}/questions', [QuestionController::class, 'store'])->name('questions.store');
     Route::get('questions/{question}/edit', [QuestionController::class, 'edit'])->name('questions.edit');
     Route::put('questions/{question}', [QuestionController::class, 'update'])->name('questions.update');
     Route::delete('questions/{question}', [QuestionController::class, 'destroy'])->name('questions.destroy');
-    
+
     // Управление вариантами ответов
     Route::post('questions/{question}/choices', [ChoiceController::class, 'store'])->name('choices.store');
     Route::get('choices/{choice}/edit', [ChoiceController::class, 'edit'])->name('choices.edit');
     Route::put('choices/{choice}', [ChoiceController::class, 'update'])->name('choices.update');
     Route::delete('choices/{choice}', [ChoiceController::class, 'destroy'])->name('choices.destroy');
-    
+
     // Статистика и экспорт
     Route::get('tests/{test}/statistics', [TestController::class, 'statistics'])->name('tests.statistics');
     Route::get('tests/{test}/export', [TestController::class, 'export'])->name('tests.export');
@@ -62,7 +73,7 @@ Route::post('gift/import', [\App\Http\Controllers\Teacher\GiftImportController::
 
 /*
 |--------------------------------------------------------------------------
-| Группа маршрутов для преподавателя (role: admin)
+| Группа маршрутов для администратора (role: admin)
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -72,10 +83,16 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('statistics/export-excel', [\App\Http\Controllers\Admin\StatisticsController::class, 'exportExcel'])->name('statistics.export.excel');
 });
 
+/*
+|--------------------------------------------------------------------------
+| Профиль пользователя
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [\App\Http\Controllers\UserProfileController::class, 'show'])->name('profile.show');
     Route::post('/profile', [\App\Http\Controllers\UserProfileController::class, 'update'])->name('profile.update');
 });
+
 /*
 |--------------------------------------------------------------------------
 | Группа маршрутов для студента (role: student)
@@ -97,9 +114,14 @@ Route::middleware(['auth', 'role:student'])->prefix('student')->name('student.')
     // История результатов
     Route::get('results', [AttemptController::class, 'history'])->name('results');
 });
-Route::get('/terms', [App\Http\Controllers\TermsController::class, 'show'])->name('terms');
-Route::view('/terms', 'auth.terms')->name('terms');
 
+/*
+|--------------------------------------------------------------------------
+| Прочие маршруты
+|--------------------------------------------------------------------------
+*/
+Route::get('/terms', [App\Http\Controllers\TermsController::class, 'show'])->name('terms');
+// Убрал дублирующий маршрут view, оставил контроллер.
 
 Route::get('/db-test', function () {
     try {

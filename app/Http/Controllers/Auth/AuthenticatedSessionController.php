@@ -18,13 +18,13 @@ class AuthenticatedSessionController extends Controller
     {
         return view('auth.login');
     }
-    protected function redirectTo()
-{
-    if (auth()->user()->role === 'teacher') {
-        return '/teacher/dashboard';
-    }
-    return '/student/dashboard';
-}
+//     protected function redirectTo()
+// {
+//     if (auth()->user()->role === 'teacher') {
+//         return '/teacher/dashboard';
+//     }
+//     return '/student/dashboard';
+// }
 
     /**
      * Handle an incoming authentication request.
