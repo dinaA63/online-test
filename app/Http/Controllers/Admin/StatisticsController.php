@@ -87,79 +87,82 @@ class StatisticsController extends Controller
         ));
     }
 
-public function exportCsv(Request $request)
-{
-    $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
-    $this->applyFilters($query, $request);
-    $attempts = $query->get();
+    public function exportCsv(Request $request)
+    {
+        $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
+        $this->applyFilters($query, $request);
+        $attempts = $query->get();
 
-    $output = fopen('php://temp', 'r+');
+        $output = fopen('php://temp', 'r+');
 
-    // BOM для UTF-8
-    fwrite($output, "\xEF\xBB\xBF");
+        // BOM для UTF-8
+        fwrite($output, "\xEF\xBB\xBF");
+        // Заголовки через табуляцию (Excel корректно разобьёт по столбцам)
+        fwrite($output, "Студент\tEmail\tТест\tРезультат (%)\tДата завершения\n");
 
-    // Заголовки через табуляцию
-    $headers = ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения'];
-    fwrite($output, implode("\t", $headers) . "\n");
+        foreach ($attempts as $attempt) {
+            $line = [
+                $attempt->user->name,
+                $attempt->user->email,
+                $attempt->test->title,
+                round($attempt->score, 2),
+                $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
+            ];
+            fwrite($output, implode("\t", $line) . "\n");
+        }
 
-    foreach ($attempts as $attempt) {
-        $line = [
-            $attempt->user->name,
-            $attempt->user->email,
-            $attempt->test->title,
-            round($attempt->score, 2),
-            $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
-        ];
-        fwrite($output, implode("\t", $line) . "\n");
+        rewind($output);
+        $csvContent = stream_get_contents($output);
+        fclose($output);
+
+        return response($csvContent, 200, [
+            'Content-Type'           => 'text/csv; charset=UTF-8',
+            'Content-Disposition'    => 'attachment; filename="statistics_export.csv"',
+        ]);
     }
 
-    rewind($output);
-    $csv = stream_get_contents($output);
-    fclose($output);
+    public function exportExcel(Request $request)
+    {
+        $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
+        $this->applyFilters($query, $request);
+        $attempts = $query->get();
 
-    return response($csv, 200, [
-        'Content-Type'           => 'text/csv; charset=UTF-8',
-        'Content-Disposition'    => 'attachment; filename="statistics_export.csv"',
-    ]);
-}
+        // Создаём XML в формате Microsoft Excel 2003 (SpreadsheetML)
+        // Это гарантирует правильное отображение столбцов и кириллицы
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $xml .= '<?mso-application progid="Excel.Sheet"?>' . "\n";
+        $xml .= '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"';
+        $xml .= ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' . "\n";
+        $xml .= '<Worksheet ss:Name="Export">' . "\n";
+        $xml .= '<Table>' . "\n";
 
-public function exportExcel(Request $request)
-{
-    $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
-    $this->applyFilters($query, $request);
-    $attempts = $query->get();
+        // Заголовки
+        $xml .= '<Row>';
+        foreach (['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения'] as $header) {
+            $xml .= '<Cell><Data ss:Type="String">' . htmlspecialchars($header, ENT_XML1, 'UTF-8') . '</Data></Cell>';
+        }
+        $xml .= '</Row>' . "\n";
 
-    $output = fopen('php://temp', 'r+');
+        // Данные
+        foreach ($attempts as $attempt) {
+            $xml .= '<Row>';
+            $xml .= '<Cell><Data ss:Type="String">' . htmlspecialchars($attempt->user->name, ENT_XML1, 'UTF-8') . '</Data></Cell>';
+            $xml .= '<Cell><Data ss:Type="String">' . htmlspecialchars($attempt->user->email, ENT_XML1, 'UTF-8') . '</Data></Cell>';
+            $xml .= '<Cell><Data ss:Type="String">' . htmlspecialchars($attempt->test->title, ENT_XML1, 'UTF-8') . '</Data></Cell>';
+            $xml .= '<Cell><Data ss:Type="Number">' . round($attempt->score, 2) . '</Data></Cell>';
+            $xml .= '<Cell><Data ss:Type="String">' . ($attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—') . '</Data></Cell>';
+            $xml .= '</Row>' . "\n";
+        }
 
-    // BOM для UTF-8
-    fwrite($output, "\xEF\xBB\xBF");
+        $xml .= '</Table>' . "\n";
+        $xml .= '</Worksheet>' . "\n";
+        $xml .= '</Workbook>';
 
-    // Заголовки через табуляцию
-    $headers = ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения'];
-    fwrite($output, implode("\t", $headers) . "\n");
-
-    foreach ($attempts as $attempt) {
-        $line = [
-            $attempt->user->name,
-            $attempt->user->email,
-            $attempt->test->title,
-            round($attempt->score, 2),
-            $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
-        ];
-        fwrite($output, implode("\t", $line) . "\n");
+        return response($xml, 200, [
+            'Content-Type'           => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Disposition'    => 'attachment; filename="statistics_export.xls"',
+        ]);
     }
-
-    rewind($output);
-    $csv = stream_get_contents($output);
-    fclose($output);
-
-    return response($csv, 200, [
-        'Content-Type'           => 'application/vnd.ms-excel; charset=UTF-8',
-        'Content-Disposition'    => 'attachment; filename="statistics_export.xls"',
-    ]);
-}
-
-
 
     private function applyFilters($query, Request $request): void
     {
