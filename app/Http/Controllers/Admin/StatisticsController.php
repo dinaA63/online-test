@@ -95,10 +95,12 @@ public function exportCsv(Request $request)
 
     $output = fopen('php://temp', 'r+');
 
-    // Заголовки в UTF-16LE с BOM
+    // BOM для UTF-8
+    fwrite($output, "\xEF\xBB\xBF");
+
+    // Заголовки через табуляцию
     $headers = ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения'];
-    fwrite($output, "\xFF\xFE"); // BOM UTF-16LE
-    fwrite($output, mb_convert_encoding(implode(';', $headers) . "\n", 'UTF-16LE', 'UTF-8'));
+    fwrite($output, implode("\t", $headers) . "\n");
 
     foreach ($attempts as $attempt) {
         $line = [
@@ -108,7 +110,7 @@ public function exportCsv(Request $request)
             round($attempt->score, 2),
             $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
         ];
-        fwrite($output, mb_convert_encoding(implode(';', $line) . "\n", 'UTF-16LE', 'UTF-8'));
+        fwrite($output, implode("\t", $line) . "\n");
     }
 
     rewind($output);
@@ -116,7 +118,7 @@ public function exportCsv(Request $request)
     fclose($output);
 
     return response($csv, 200, [
-        'Content-Type'           => 'text/csv; charset=UTF-16LE',
+        'Content-Type'           => 'text/csv; charset=UTF-8',
         'Content-Disposition'    => 'attachment; filename="statistics_export.csv"',
     ]);
 }
@@ -129,10 +131,12 @@ public function exportExcel(Request $request)
 
     $output = fopen('php://temp', 'r+');
 
-    // Заголовки в UTF-16LE с BOM
+    // BOM для UTF-8
+    fwrite($output, "\xEF\xBB\xBF");
+
+    // Заголовки через табуляцию
     $headers = ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения'];
-    fwrite($output, "\xFF\xFE"); // BOM UTF-16LE
-    fwrite($output, mb_convert_encoding(implode(';', $headers) . "\n", 'UTF-16LE', 'UTF-8'));
+    fwrite($output, implode("\t", $headers) . "\n");
 
     foreach ($attempts as $attempt) {
         $line = [
@@ -142,7 +146,7 @@ public function exportExcel(Request $request)
             round($attempt->score, 2),
             $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
         ];
-        fwrite($output, mb_convert_encoding(implode(';', $line) . "\n", 'UTF-16LE', 'UTF-8'));
+        fwrite($output, implode("\t", $line) . "\n");
     }
 
     rewind($output);
@@ -150,10 +154,11 @@ public function exportExcel(Request $request)
     fclose($output);
 
     return response($csv, 200, [
-        'Content-Type'           => 'application/vnd.ms-excel; charset=UTF-16LE',
+        'Content-Type'           => 'application/vnd.ms-excel; charset=UTF-8',
         'Content-Disposition'    => 'attachment; filename="statistics_export.xls"',
     ]);
 }
+
 
 
     private function applyFilters($query, Request $request): void
