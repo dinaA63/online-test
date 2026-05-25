@@ -87,39 +87,45 @@ class StatisticsController extends Controller
         ));
     }
 
-    public function exportCsv(Request $request)
-    {
-        $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
-        $this->applyFilters($query, $request);
-        $attempts = $query->get();
+   public function exportCsv(Request $request)
+{
+    $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
+    $this->applyFilters($query, $request);
+    $attempts = $query->get();
 
-        $output = fopen('php://temp', 'r+');
+    $output = fopen('php://temp', 'r+');
 
-        // BOM для UTF-8
-        fwrite($output, "\xEF\xBB\xBF");
-        // Заголовки через табуляцию (Excel корректно разобьёт по столбцам)
-        fwrite($output, "Студент\tEmail\tТест\tРезультат (%)\tДата завершения\n");
+    // BOM для корректной кириллицы
+    fwrite($output, "\xEF\xBB\xBF");
+    // Директива для Excel – явно указываем разделитель
+    fwrite($output, "sep=;\n");
+    // Заголовки – разделяем точкой с запятой
+    fwrite($output, "Студент;Email;Тест;Результат (%);Дата завершения\n");
 
-        foreach ($attempts as $attempt) {
-            $line = [
-                $attempt->user->name,
-                $attempt->user->email,
-                $attempt->test->title,
-                round($attempt->score, 2),
-                $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
-            ];
-            fwrite($output, implode("\t", $line) . "\n");
-        }
-
-        rewind($output);
-        $csvContent = stream_get_contents($output);
-        fclose($output);
-
-        return response($csvContent, 200, [
-            'Content-Type'           => 'text/csv; charset=UTF-8',
-            'Content-Disposition'    => 'attachment; filename="statistics_export.csv"',
-        ]);
+    foreach ($attempts as $attempt) {
+        $line = [
+            $attempt->user->name,
+            $attempt->user->email,
+            $attempt->test->title,
+            round($attempt->score, 2),
+            $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
+        ];
+        // Экранируем значения, чтобы не сломать CSV
+        $escaped = array_map(function ($value) {
+            return '"' . str_replace('"', '""', $value) . '"';
+        }, $line);
+        fwrite($output, implode(';', $escaped) . "\n");
     }
+
+    rewind($output);
+    $csvContent = stream_get_contents($output);
+    fclose($output);
+
+    return response($csvContent, 200, [
+        'Content-Type'           => 'text/csv; charset=UTF-8',
+        'Content-Disposition'    => 'attachment; filename="statistics_export.csv"',
+    ]);
+}
 
     public function exportExcel(Request $request)
     {
