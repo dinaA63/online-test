@@ -67,30 +67,35 @@
                                 <th><i class="fas fa-medal me-1"></i> Оценка</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @foreach($attempts as $attempt)
-                                @php
-                                    $score = round($attempt->score, 2);
-                                    $grade = $score >= 90 ? 'Отлично' : ($score >= 75 ? 'Хорошо' : ($score >= 60 ? 'Удовлетворительно' : 'Неудовлетворительно'));
-                                    $badgeClass = $score >= 90 ? 'bg-success' : ($score >= 75 ? 'bg-primary' : ($score >= 60 ? 'bg-warning text-dark' : 'bg-danger'));
-                                @endphp
-                                <tr>
-                                    <td class="fw-semibold">{{ $attempt->test->title }}</td>
-                                    <td>{{ $attempt->finished_at->format('d.m.Y H:i') }}</td>
-                                    <td style="min-width: 160px;">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="progress flex-grow-1" style="height: 8px; border-radius: 1rem;">
-                                                <div class="progress-bar" role="progressbar" style="width: {{ $score }}%; background-color: var(--primary);" aria-valuenow="{{ $score }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                            </div>
-                                            <span class="fw-semibold" style="min-width: 45px;">{{ $score }}%</span>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge {{ $badgeClass }} rounded-pill px-3 py-2">{{ $grade }}</span>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
+<tbody>
+    @foreach($attempts as $attempt)
+        @php
+            $score = round($attempt->score, 2);
+            $grade = $score >= 90 ? 'Отлично' : ($score >= 75 ? 'Хорошо' : ($score >= 60 ? 'Удовлетворительно' : 'Неудовлетворительно'));
+            $badgeClass = $score >= 90 ? 'bg-success' : ($score >= 75 ? 'bg-primary' : ($score >= 60 ? 'bg-warning text-dark' : 'bg-danger'));
+        @endphp
+        <tr>
+            <td class="fw-semibold">{{ $attempt->test->title }}</td>
+            <td>{{ $attempt->finished_at->format('d.m.Y H:i') }}</td>
+            <td style="min-width: 160px;">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-grow-1" style="height: 8px; border-radius: 1rem;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ $score }}%; background-color: var(--primary);" aria-valuenow="{{ $score }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <span class="fw-semibold" style="min-width: 45px;">{{ $score }}%</span>
+                </div>
+            </td>
+            <td>
+                <span class="badge {{ $badgeClass }} rounded-pill px-3 py-2">{{ $grade }}</span>
+            </td>
+            <td>
+                <a href="{{ route('student.attempt.show', $attempt) }}" class="btn btn-sm btn-outline-info rounded-pill">
+                    <i class="fas fa-eye me-1"></i> Просмотр
+                </a>
+            </td>
+        </tr>
+    @endforeach
+</tbody>
                     </table>
                 </div>
             </div>
