@@ -95,21 +95,20 @@ public function exportCsv(Request $request)
 
     $output = fopen('php://temp', 'r+');
 
-    // Директива для Excel + BOM для UTF-8
-    fputs($output, "\xEF\xBB\xBF");
-    fputs($output, "sep=;\n");
-
-    // Заголовки
-    fputcsv($output, ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения'], ';');
+    // Заголовки в UTF-16LE с BOM
+    $headers = ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения'];
+    fwrite($output, "\xFF\xFE"); // BOM UTF-16LE
+    fwrite($output, mb_convert_encoding(implode(';', $headers) . "\n", 'UTF-16LE', 'UTF-8'));
 
     foreach ($attempts as $attempt) {
-        fputcsv($output, [
+        $line = [
             $attempt->user->name,
             $attempt->user->email,
             $attempt->test->title,
             round($attempt->score, 2),
             $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
-        ], ';');
+        ];
+        fwrite($output, mb_convert_encoding(implode(';', $line) . "\n", 'UTF-16LE', 'UTF-8'));
     }
 
     rewind($output);
@@ -117,13 +116,12 @@ public function exportCsv(Request $request)
     fclose($output);
 
     return response($csv, 200, [
-        'Content-Type'           => 'text/csv; charset=UTF-8',
+        'Content-Type'           => 'text/csv; charset=UTF-16LE',
         'Content-Disposition'    => 'attachment; filename="statistics_export.csv"',
     ]);
 }
 
-
-    public function exportExcel(Request $request)
+public function exportExcel(Request $request)
 {
     $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
     $this->applyFilters($query, $request);
@@ -131,30 +129,28 @@ public function exportCsv(Request $request)
 
     $output = fopen('php://temp', 'r+');
 
-    // Директива для Excel + BOM для UTF-8
-    fputs($output, "\xEF\xBB\xBF");
-    fputs($output, "sep=;\n");
-
-    // Заголовки
-    fputcsv($output, ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения'], ';');
+    // Заголовки в UTF-16LE с BOM
+    $headers = ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения'];
+    fwrite($output, "\xFF\xFE"); // BOM UTF-16LE
+    fwrite($output, mb_convert_encoding(implode(';', $headers) . "\n", 'UTF-16LE', 'UTF-8'));
 
     foreach ($attempts as $attempt) {
-        fputcsv($output, [
+        $line = [
             $attempt->user->name,
             $attempt->user->email,
             $attempt->test->title,
             round($attempt->score, 2),
             $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
-        ], ';');
+        ];
+        fwrite($output, mb_convert_encoding(implode(';', $line) . "\n", 'UTF-16LE', 'UTF-8'));
     }
 
     rewind($output);
     $csv = stream_get_contents($output);
     fclose($output);
 
-    // Отдаём как Excel (формат CSV, но с правильным разделителем)
     return response($csv, 200, [
-        'Content-Type'           => 'application/vnd.ms-excel; charset=UTF-8',
+        'Content-Type'           => 'application/vnd.ms-excel; charset=UTF-16LE',
         'Content-Disposition'    => 'attachment; filename="statistics_export.xls"',
     ]);
 }
