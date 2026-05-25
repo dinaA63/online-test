@@ -87,7 +87,7 @@ class StatisticsController extends Controller
         ));
     }
 
-   public function exportCsv(Request $request)
+public function exportCsv(Request $request)
 {
     $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
     $this->applyFilters($query, $request);
@@ -95,11 +95,9 @@ class StatisticsController extends Controller
 
     $output = fopen('php://temp', 'r+');
 
-    // BOM для корректной кириллицы
-    fwrite($output, "\xEF\xBB\xBF");
-    // Директива для Excel – явно указываем разделитель
+    // Директива для Excel – явно указываем разделитель (без BOM)
     fwrite($output, "sep=;\n");
-    // Заголовки – разделяем точкой с запятой
+    // Заголовки
     fwrite($output, "Студент;Email;Тест;Результат (%);Дата завершения\n");
 
     foreach ($attempts as $attempt) {
@@ -110,7 +108,7 @@ class StatisticsController extends Controller
             round($attempt->score, 2),
             $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
         ];
-        // Экранируем значения, чтобы не сломать CSV
+        // Экранируем значения
         $escaped = array_map(function ($value) {
             return '"' . str_replace('"', '""', $value) . '"';
         }, $line);
@@ -121,9 +119,12 @@ class StatisticsController extends Controller
     $csvContent = stream_get_contents($output);
     fclose($output);
 
+    // Перекодируем UTF‑8 → Windows‑1251 для корректного открытия в Excel
+    $csvContent = mb_convert_encoding($csvContent, 'Windows-1251', 'UTF-8');
+
     return response($csvContent, 200, [
-        'Content-Type'           => 'text/csv; charset=UTF-8',
-        'Content-Disposition'    => 'attachment; filename="statistics_export.csv"',
+        'Content-Type'        => 'text/csv; charset=Windows-1251',
+        'Content-Disposition' => 'attachment; filename="statistics_export.csv"',
     ]);
 }
 
