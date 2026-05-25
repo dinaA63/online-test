@@ -21,12 +21,24 @@ class Question extends Model
         return $this->hasMany(Choice::class);
     }
 
-    public function getTypeLabelAttribute()
-    {
-        return [
-            'single_choice' => 'Одиночный выбор',
-            'multiple_choice' => 'Множественный выбор',
-            'text' => 'Текстовый ответ',
-        ][$this->type] ?? 'Неизвестный тип';
-    }
+public function getTypeLabelAttribute()
+{
+    return [
+        'single_choice'   => 'Одиночный выбор',
+        'multiple_choice' => 'Множественный выбор',
+        'text'            => 'Текстовый ответ',
+        'matching'        => 'Соответствие',
+        'sequence'        => 'Последовательность',
+    ][$this->type] ?? 'Неизвестный тип';
+}
+
+    public function matchingPairs()
+{
+    return $this->hasMany(MatchingPair::class);
+}
+
+public function sequenceItems()
+{
+    return $this->hasMany(SequenceItem::class);
+}
 }
