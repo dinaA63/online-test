@@ -4,21 +4,16 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class UserProfileController extends Controller
 {
-    /**
-     * Показывает профиль текущего пользователя.
-     */
     public function show()
     {
         $user = auth()->user();
         return view('profile.show', compact('user'));
     }
 
-    /**
-     * Обновляет аватар и описание.
-     */
     public function update(Request $request)
     {
         $user = auth()->user();
@@ -30,12 +25,29 @@ class UserProfileController extends Controller
 
         // Обработка аватара
         if ($request->hasFile('avatar')) {
-            // Удаляем старый аватар, если есть
-            if ($user->avatar) {
-                Storage::disk('public')->delete($user->avatar);
+            try {
+                // Удаляем старый аватар
+                if ($user->avatar) {
+                    Storage::disk('public')->delete($user->avatar);
+                }
+
+                // Создаём папку avatars, если её нет
+                if (!Storage::disk('public')->exists('avatars')) {
+                    Storage::disk('public')->makeDirectory('avatars');
+                }
+
+                // Сохраняем файл
+                $file = $request->file('avatar');
+                $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
+                $path = $file->storeAs('avatars', $filename, 'public');
+                
+                $user->avatar = $path;
+                
+                Log::info('Avatar uploaded', ['user_id' => $user->id, 'path' => $path]);
+            } catch (\Exception $e) {
+                Log::error('Avatar upload failed', ['error' => $e->getMessage()]);
+                return back()->with('error', 'Ошибка при загрузке аватара: ' . $e->getMessage());
             }
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = $path;
         }
 
         $user->bio = $request->bio;

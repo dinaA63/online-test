@@ -14,21 +14,16 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class StatisticsController extends Controller
 {
-    /**
-     * Главная страница статистики с фильтрами.
-     */
     public function index(Request $request)
     {
         $groups = Group::all();
 
-        // Общая статистика
         $totalStudents   = User::where('role', 'student')->count();
         $totalTeachers   = User::where('role', 'teacher')->count();
         $totalTests      = Test::count();
         $totalAttempts   = Attempt::count();
         $averageScore    = Attempt::whereNotNull('finished_at')->avg('score');
 
-        // Статистика по группе
         $selectedGroup = $request->input('group_id');
         $groupStats = null;
         if ($selectedGroup) {
@@ -45,7 +40,6 @@ class StatisticsController extends Controller
             }
         }
 
-        // Статистика конкретного студента
         $selectedStudent = $request->input('student_id');
         $studentStats = null;
         if ($selectedStudent) {
@@ -64,7 +58,6 @@ class StatisticsController extends Controller
             }
         }
 
-        // Статистика преподавателя
         $selectedTeacher = $request->input('teacher_id');
         $teacherStats = null;
         if ($selectedTeacher) {
@@ -97,30 +90,10 @@ class StatisticsController extends Controller
         ));
     }
 
-    /**
-     * Экспорт данных в CSV.
-     */
     public function exportCsv(Request $request)
     {
-        $query = Attempt::whereNotNull('finished_at')
-                        ->with('user', 'test');
-
-        // Применяем те же фильтры, что и в index
-        if ($request->filled('group_id')) {
-            $group = Group::find($request->group_id);
-            if ($group) {
-                $userIds = $group->users->pluck('id');
-                $query->whereIn('user_id', $userIds);
-            }
-        }
-        if ($request->filled('student_id')) {
-            $query->where('user_id', $request->student_id);
-        }
-        if ($request->filled('teacher_id')) {
-            $testIds = Test::where('created_by', $request->teacher_id)->pluck('id');
-            $query->whereIn('test_id', $testIds);
-        }
-
+        $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
+        $this->applyFilters($query, $request);
         $attempts = $query->get();
 
         $csv = Writer::createFromString('');
@@ -132,46 +105,25 @@ class StatisticsController extends Controller
                 $attempt->user->email,
                 $attempt->test->title,
                 round($attempt->score, 2),
-                $attempt->finished_at->format('d.m.Y H:i')
+                $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
             ]);
         }
 
         return response((string) $csv, 200, [
-            'Content-Type'           => 'text/csv',
+            'Content-Type'           => 'text/csv; charset=UTF-8',
             'Content-Disposition'    => 'attachment; filename="statistics_export.csv"',
         ]);
     }
 
-    /**
-     * Экспорт данных в Excel.
-     */
     public function exportExcel(Request $request)
     {
-        $query = Attempt::whereNotNull('finished_at')
-                        ->with('user', 'test');
-
-        // Фильтры
-        if ($request->filled('group_id')) {
-            $group = Group::find($request->group_id);
-            if ($group) {
-                $userIds = $group->users->pluck('id');
-                $query->whereIn('user_id', $userIds);
-            }
-        }
-        if ($request->filled('student_id')) {
-            $query->where('user_id', $request->student_id);
-        }
-        if ($request->filled('teacher_id')) {
-            $testIds = Test::where('created_by', $request->teacher_id)->pluck('id');
-            $query->whereIn('test_id', $testIds);
-        }
-
+        $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
+        $this->applyFilters($query, $request);
         $attempts = $query->get();
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Заголовки
         $sheet->setCellValue('A1', 'Студент');
         $sheet->setCellValue('B1', 'Email');
         $sheet->setCellValue('C1', 'Тест');
@@ -184,15 +136,32 @@ class StatisticsController extends Controller
             $sheet->setCellValue('B' . $row, $attempt->user->email);
             $sheet->setCellValue('C' . $row, $attempt->test->title);
             $sheet->setCellValue('D' . $row, round($attempt->score, 2));
-            $sheet->setCellValue('E' . $row, $attempt->finished_at->format('d.m.Y H:i'));
+            $sheet->setCellValue('E' . $row, $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—');
             $row++;
         }
 
         $writer = new Xlsx($spreadsheet);
-        $filename = 'statistics_export.xlsx';
-        $tempFile = tempnam(sys_get_temp_dir(), $filename);
+        $tempFile = tempnam(sys_get_temp_dir(), 'stat_') . '.xlsx';
         $writer->save($tempFile);
 
-        return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
+        return response()->download($tempFile, 'statistics_export.xlsx')->deleteFileAfterSend(true);
+    }
+
+    private function applyFilters($query, Request $request): void
+    {
+        if ($request->filled('group_id')) {
+            $group = Group::find($request->group_id);
+            if ($group) {
+                $userIds = $group->users->pluck('id');
+                $query->whereIn('user_id', $userIds);
+            }
+        }
+        if ($request->filled('student_id')) {
+            $query->where('user_id', $request->student_id);
+        }
+        if ($request->filled('teacher_id')) {
+            $testIds = Test::where('created_by', $request->teacher_id)->pluck('id');
+            $query->whereIn('test_id', $testIds);
+        }
     }
 }

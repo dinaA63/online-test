@@ -1,6 +1,23 @@
 @extends('layouts.app')
 @section('title', 'Прохождение теста')
-
+@if(isset($remainingSeconds) && $remainingSeconds !== null)
+    <div class="alert alert-info text-center" id="timer">
+        Оставшееся время: <span id="timer-minutes">{{ floor($remainingSeconds / 60) }}</span>:<span id="timer-seconds">{{ $remainingSeconds % 60 }}</span>
+    </div>
+    <script>
+        let totalSeconds = {{ $remainingSeconds }};
+        const timerInterval = setInterval(() => {
+            totalSeconds--;
+            if (totalSeconds <= 0) {
+                clearInterval(timerInterval);
+                document.getElementById('submit-test').click();
+            } else {
+                document.getElementById('timer-minutes').textContent = Math.floor(totalSeconds / 60);
+                document.getElementById('timer-seconds').textContent = (totalSeconds % 60).toString().padStart(2, '0');
+            }
+        }, 1000);
+    </script>
+@endif
 @section('content')
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">

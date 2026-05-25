@@ -25,15 +25,15 @@ class TestController extends Controller
 public function store(Request $request)
 {
     $validated = $request->validate([
-        'title' => 'required',
+        'title'       => 'required',
         'description' => 'nullable',
-        'time_limit' => 'integer|min:0',
-        'max_attempts' => 'integer|min:1',
+        'time_limit'  => 'integer|min:0',
+        'max_attempts'=> 'integer|min:1',
     ]);
 
-    auth()->user()->tests()->create($validated);
+    $test = auth()->user()->tests()->create($validated);
 
-    return redirect()->route('teacher.tests.index')->with('success', 'Тест создан');
+    return redirect()->route('teacher.tests.show', $test)->with('success', 'Тест создан');
 }
 
     public function show(Test $test)

@@ -41,4 +41,8 @@ public function sequenceItems()
 {
     return $this->hasMany(SequenceItem::class);
 }
+public function answersForAttempt($attemptId)
+{
+    return $this->hasMany(Answer::class)->where('attempt_id', $attemptId);
+}
 }
