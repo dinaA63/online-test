@@ -87,74 +87,65 @@ class StatisticsController extends Controller
         ));
     }
 
-    public function exportCsv(Request $request)
-    {
-        $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
-        $this->applyFilters($query, $request);
-        $attempts = $query->get();
+   public function exportCsv(Request $request)
+{
+    $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
+    $this->applyFilters($query, $request);
+    $attempts = $query->get();
 
-        $output = fopen('php://temp', 'r+');
+    $output = fopen('php://temp', 'r+');
+    fputs($output, "\xEF\xBB\xBF");
+    fputcsv($output, ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения']);
 
-        // BOM для корректного UTF-8 в Excel
-        fputs($output, "\xEF\xBB\xBF");
-
-        // Заголовки
-        fputcsv($output, ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения']);
-
-        foreach ($attempts as $attempt) {
-            fputcsv($output, [
-                $attempt->user->name,
-                $attempt->user->email,
-                $attempt->test->title,
-                round($attempt->score, 2),
-                $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
-            ]);
-        }
-
-        rewind($output);
-        $csv = stream_get_contents($output);
-        fclose($output);
-
-        return response($csv, 200, [
-            'Content-Type'           => 'text/csv; charset=UTF-8',
-            'Content-Disposition'    => 'attachment; filename="statistics_export.csv"',
+    foreach ($attempts as $attempt) {
+        fputcsv($output, [
+            $attempt->user->name,
+            $attempt->user->email,
+            $attempt->test->title,
+            round($attempt->score, 2),
+            $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
         ]);
     }
+
+    rewind($output);
+    $csv = stream_get_contents($output);
+    fclose($output);
+
+    return response($csv, 200, [
+        'Content-Type'           => 'text/csv; charset=UTF-8',
+        'Content-Disposition'    => 'attachment; filename="statistics_export.csv"',
+    ]);
+}
 
     public function exportExcel(Request $request)
-    {
-        $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
-        $this->applyFilters($query, $request);
-        $attempts = $query->get();
+{
+    $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
+    $this->applyFilters($query, $request);
+    $attempts = $query->get();
 
-        $output = fopen('php://temp', 'r+');
+    $output = fopen('php://temp', 'r+');
+    fputs($output, "\xEF\xBB\xBF");
+    fputcsv($output, ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения']);
 
-        // BOM для корректного UTF-8 в Excel
-        fputs($output, "\xEF\xBB\xBF");
-
-        // Заголовки
-        fputcsv($output, ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения']);
-
-        foreach ($attempts as $attempt) {
-            fputcsv($output, [
-                $attempt->user->name,
-                $attempt->user->email,
-                $attempt->test->title,
-                round($attempt->score, 2),
-                $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
-            ]);
-        }
-
-        rewind($output);
-        $csv = stream_get_contents($output);
-        fclose($output);
-
-        // Отдаём как Excel (формат CSV, открывается в Excel)
-        return response($csv, 200, [
-            'Content-Type'           => 'application/vnd.ms-excel; charset=UTF-8',
-            'Content-Disposition'    => 'attachment; filename="statistics_export.xls"',
+    foreach ($attempts as $attempt) {
+        fputcsv($output, [
+            $attempt->user->name,
+            $attempt->user->email,
+            $attempt->test->title,
+            round($attempt->score, 2),
+            $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
         ]);
     }
+
+    rewind($output);
+    $csv = stream_get_contents($output);
+    fclose($output);
+
+    return response($csv, 200, [
+        'Content-Type'           => 'application/vnd.ms-excel; charset=UTF-8',
+        'Content-Disposition'    => 'attachment; filename="statistics_export.xls"',
+    ]);
+}
 
     private function applyFilters($query, Request $request): void
     {
