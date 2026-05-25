@@ -87,15 +87,20 @@ class StatisticsController extends Controller
         ));
     }
 
-   public function exportCsv(Request $request)
+public function exportCsv(Request $request)
 {
     $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
     $this->applyFilters($query, $request);
     $attempts = $query->get();
 
     $output = fopen('php://temp', 'r+');
+
+    // Директива для Excel + BOM для UTF-8
     fputs($output, "\xEF\xBB\xBF");
-    fputcsv($output, ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения']);
+    fputs($output, "sep=;\n");
+
+    // Заголовки
+    fputcsv($output, ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения'], ';');
 
     foreach ($attempts as $attempt) {
         fputcsv($output, [
@@ -104,7 +109,7 @@ class StatisticsController extends Controller
             $attempt->test->title,
             round($attempt->score, 2),
             $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
-        ]);
+        ], ';');
     }
 
     rewind($output);
@@ -117,6 +122,7 @@ class StatisticsController extends Controller
     ]);
 }
 
+
     public function exportExcel(Request $request)
 {
     $query = Attempt::whereNotNull('finished_at')->with('user', 'test');
@@ -124,8 +130,13 @@ class StatisticsController extends Controller
     $attempts = $query->get();
 
     $output = fopen('php://temp', 'r+');
+
+    // Директива для Excel + BOM для UTF-8
     fputs($output, "\xEF\xBB\xBF");
-    fputcsv($output, ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения']);
+    fputs($output, "sep=;\n");
+
+    // Заголовки
+    fputcsv($output, ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения'], ';');
 
     foreach ($attempts as $attempt) {
         fputcsv($output, [
@@ -134,18 +145,20 @@ class StatisticsController extends Controller
             $attempt->test->title,
             round($attempt->score, 2),
             $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
-        ]);
+        ], ';');
     }
 
     rewind($output);
     $csv = stream_get_contents($output);
     fclose($output);
 
+    // Отдаём как Excel (формат CSV, но с правильным разделителем)
     return response($csv, 200, [
         'Content-Type'           => 'application/vnd.ms-excel; charset=UTF-8',
         'Content-Disposition'    => 'attachment; filename="statistics_export.xls"',
     ]);
 }
+
 
     private function applyFilters($query, Request $request): void
     {
