@@ -8,9 +8,6 @@ use App\Models\Test;
 use App\Models\Attempt;
 use App\Models\Group;
 use Illuminate\Http\Request;
-use League\Csv\Writer;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class StatisticsController extends Controller
 {
@@ -96,11 +93,16 @@ class StatisticsController extends Controller
         $this->applyFilters($query, $request);
         $attempts = $query->get();
 
-        $csv = Writer::createFromString('');
-        $csv->insertOne(['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения']);
+        $output = fopen('php://temp', 'r+');
+
+        // BOM для корректного UTF-8 в Excel
+        fputs($output, "\xEF\xBB\xBF");
+
+        // Заголовки
+        fputcsv($output, ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения']);
 
         foreach ($attempts as $attempt) {
-            $csv->insertOne([
+            fputcsv($output, [
                 $attempt->user->name,
                 $attempt->user->email,
                 $attempt->test->title,
@@ -109,7 +111,11 @@ class StatisticsController extends Controller
             ]);
         }
 
-        return response((string) $csv, 200, [
+        rewind($output);
+        $csv = stream_get_contents($output);
+        fclose($output);
+
+        return response($csv, 200, [
             'Content-Type'           => 'text/csv; charset=UTF-8',
             'Content-Disposition'    => 'attachment; filename="statistics_export.csv"',
         ]);
@@ -121,30 +127,33 @@ class StatisticsController extends Controller
         $this->applyFilters($query, $request);
         $attempts = $query->get();
 
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
+        $output = fopen('php://temp', 'r+');
 
-        $sheet->setCellValue('A1', 'Студент');
-        $sheet->setCellValue('B1', 'Email');
-        $sheet->setCellValue('C1', 'Тест');
-        $sheet->setCellValue('D1', 'Результат (%)');
-        $sheet->setCellValue('E1', 'Дата завершения');
+        // BOM для корректного UTF-8 в Excel
+        fputs($output, "\xEF\xBB\xBF");
 
-        $row = 2;
+        // Заголовки
+        fputcsv($output, ['Студент', 'Email', 'Тест', 'Результат (%)', 'Дата завершения']);
+
         foreach ($attempts as $attempt) {
-            $sheet->setCellValue('A' . $row, $attempt->user->name);
-            $sheet->setCellValue('B' . $row, $attempt->user->email);
-            $sheet->setCellValue('C' . $row, $attempt->test->title);
-            $sheet->setCellValue('D' . $row, round($attempt->score, 2));
-            $sheet->setCellValue('E' . $row, $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—');
-            $row++;
+            fputcsv($output, [
+                $attempt->user->name,
+                $attempt->user->email,
+                $attempt->test->title,
+                round($attempt->score, 2),
+                $attempt->finished_at ? $attempt->finished_at->format('d.m.Y H:i') : '—'
+            ]);
         }
 
-        $writer = new Xlsx($spreadsheet);
-        $tempFile = tempnam(sys_get_temp_dir(), 'stat_') . '.xlsx';
-        $writer->save($tempFile);
+        rewind($output);
+        $csv = stream_get_contents($output);
+        fclose($output);
 
-        return response()->download($tempFile, 'statistics_export.xlsx')->deleteFileAfterSend(true);
+        // Отдаём как Excel (формат CSV, открывается в Excel)
+        return response($csv, 200, [
+            'Content-Type'           => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Disposition'    => 'attachment; filename="statistics_export.xls"',
+        ]);
     }
 
     private function applyFilters($query, Request $request): void
