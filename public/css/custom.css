@@ -324,9 +324,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
-    color: var(--primary);
+    font-weight: 800;
+    color: var(--primary-dark);
     background: var(--primary-soft);
+    letter-spacing: -0.02em;
 }
 
 .user-avatar__fallback.is-hidden { display: none; }

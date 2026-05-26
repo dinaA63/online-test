@@ -17,7 +17,10 @@ class Avatar
             return null;
         }
 
-        return asset('storage/' . ltrim($user->avatar, '/'));
+        $filename = basename($user->avatar);
+        $version = $user->updated_at?->getTimestamp() ?? time();
+
+        return route('avatar.file', ['filename' => $filename]) . '?v=' . $version;
     }
 
     public static function initials(?User $user): string

@@ -6,6 +6,7 @@ use App\Http\Controllers\Teacher\QuestionController;
 use App\Http\Controllers\Teacher\ChoiceController;
 use App\Http\Controllers\Student\TestController as StudentTestController;
 use App\Http\Controllers\Student\AttemptController;
+use App\Http\Controllers\AvatarController;
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -37,6 +38,10 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return redirect()->route('home');
 })->middleware('auth')->name('dashboard');
+
+Route::get('/avatar/{filename}', [AvatarController::class, 'show'])
+    ->where('filename', '[\w.\-]+')
+    ->name('avatar.file');
 
 /*
 |--------------------------------------------------------------------------
