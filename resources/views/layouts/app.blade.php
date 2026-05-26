@@ -38,13 +38,9 @@
                             </li>
                         @endif
                         <li class="nav-item dropdown">
-                            <a class="nav-link nav-pill dropdown-toggle d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
-                                @if(Auth::user()->avatar && \Illuminate\Support\Facades\Storage::disk('public')->exists(Auth::user()->avatar))
-                                    <img src="{{ asset('storage/'.Auth::user()->avatar) }}" alt="" class="nav-avatar">
-                                @else
-                                    <span class="nav-avatar nav-avatar-placeholder"><i class="fas fa-user"></i></span>
-                                @endif
-                                {{ Auth::user()->name }}
+                            <a class="nav-link nav-pill dropdown-toggle d-flex align-items-center gap-2 nav-user-toggle" href="#" data-bs-toggle="dropdown">
+                                <x-user-avatar :user="Auth::user()" size="sm" class="flex-shrink-0" />
+                                <span class="nav-user-name">{{ Auth::user()->name }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li><a class="dropdown-item" href="{{ route('profile.show') }}">Профиль</a></li>

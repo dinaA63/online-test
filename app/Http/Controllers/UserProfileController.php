@@ -11,6 +11,12 @@ class UserProfileController extends Controller
     public function show()
     {
         $user = auth()->user();
+
+        if ($user->avatar && !Storage::disk('public')->exists($user->avatar)) {
+            $user->update(['avatar' => null]);
+            $user->refresh();
+        }
+
         return view('profile.show', compact('user'));
     }
 
@@ -20,7 +26,7 @@ class UserProfileController extends Controller
 
         $request->validate([
             'bio'    => 'nullable|string|max:500',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
         // Обработка аватара
@@ -38,7 +44,8 @@ class UserProfileController extends Controller
 
                 // Сохраняем файл
                 $file = $request->file('avatar');
-                $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
+                $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+                $filename = $user->id . '_' . time() . '.' . preg_replace('/[^a-z0-9]/', '', $ext);
                 $path = $file->storeAs('avatars', $filename, 'public');
                 
                 $user->avatar = $path;
