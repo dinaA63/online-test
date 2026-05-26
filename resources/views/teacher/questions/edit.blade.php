@@ -24,10 +24,56 @@
                                 <option value="single_choice"   {{ old('type', $question->type) == 'single_choice'   ? 'selected' : '' }}>Одиночный выбор</option>
                                 <option value="multiple_choice" {{ old('type', $question->type) == 'multiple_choice' ? 'selected' : '' }}>Множественный выбор</option>
                                 <option value="text"           {{ old('type', $question->type) == 'text'           ? 'selected' : '' }}>Текстовый ответ</option>
+                                <option value="matching"       {{ old('type', $question->type) == 'matching'       ? 'selected' : '' }}>Соответствие</option>
+                                <option value="sequence"       {{ old('type', $question->type) == 'sequence'       ? 'selected' : '' }}>Последовательность</option>
                             </select>
                         </div>
 
-                        <div id="choicesBlock" style="display: {{ $question->type != 'text' ? 'block' : 'none' }};">
+                        <div id="sequenceBlock" style="display: {{ old('type', $question->type) === 'sequence' ? 'block' : 'none' }};">
+                            <label class="form-label fw-semibold">Элементы последовательности (правильный порядок)</label>
+                            <div id="sequenceContainer">
+                                @forelse($question->sequenceItems->sortBy('correct_order') as $index => $item)
+                                    <div class="input-group mb-2 sequence-item-row">
+                                        <span class="input-group-text">{{ $index + 1 }}</span>
+                                        <input type="text" name="sequence_items[{{ $index }}][item_text]" class="form-control" value="{{ old("sequence_items.$index.item_text", $item->item_text) }}">
+                                        <input type="hidden" name="sequence_items[{{ $index }}][id]" value="{{ $item->id }}">
+                                        <button type="button" class="btn btn-outline-danger remove-sequence">×</button>
+                                    </div>
+                                @empty
+                                    <div class="input-group mb-2 sequence-item-row">
+                                        <span class="input-group-text">1</span>
+                                        <input type="text" name="sequence_items[0][item_text]" class="form-control">
+                                        <button type="button" class="btn btn-outline-danger remove-sequence">×</button>
+                                    </div>
+                                @endforelse
+                            </div>
+                            <button type="button" id="addSequence" class="btn btn-sm btn-outline-primary mt-2"><i class="fas fa-plus"></i> Добавить шаг</button>
+                            <input type="hidden" name="deleted_sequence_items" id="deletedSequenceItems" value="">
+                        </div>
+
+                        <div id="matchingBlock" style="display: {{ old('type', $question->type) === 'matching' ? 'block' : 'none' }};">
+                            <label class="form-label fw-semibold">Пары соответствия</label>
+                            <div id="pairsContainer">
+                                @forelse($question->matchingPairs as $index => $pair)
+                                    <div class="row g-2 mb-2 pair-item">
+                                        <div class="col-md-5"><input type="text" name="pairs[{{ $index }}][left_text]" class="form-control" value="{{ old("pairs.$index.left_text", $pair->left_text) }}"></div>
+                                        <div class="col-md-5"><input type="text" name="pairs[{{ $index }}][right_text]" class="form-control" value="{{ old("pairs.$index.right_text", $pair->right_text) }}"></div>
+                                        <div class="col-md-2"><button type="button" class="btn btn-outline-danger w-100 remove-pair">×</button></div>
+                                        <input type="hidden" name="pairs[{{ $index }}][id]" value="{{ $pair->id }}">
+                                    </div>
+                                @empty
+                                    <div class="row g-2 mb-2 pair-item">
+                                        <div class="col-md-5"><input type="text" name="pairs[0][left_text]" class="form-control"></div>
+                                        <div class="col-md-5"><input type="text" name="pairs[0][right_text]" class="form-control"></div>
+                                        <div class="col-md-2"><button type="button" class="btn btn-outline-danger w-100 remove-pair">×</button></div>
+                                    </div>
+                                @endforelse
+                            </div>
+                            <button type="button" id="addPair" class="btn btn-sm btn-outline-primary mt-2"><i class="fas fa-plus"></i> Добавить пару</button>
+                            <input type="hidden" name="deleted_pairs" id="deletedPairs" value="">
+                        </div>
+
+                        <div id="choicesBlock" style="display: {{ in_array(old('type', $question->type), ['single_choice','multiple_choice']) ? 'block' : 'none' }};">
                             <label class="form-label fw-semibold">Варианты ответов</label>
                             <div id="choicesContainer">
                                 @foreach($question->choices as $index => $choice)
@@ -81,15 +127,76 @@
         const choicesContainer = document.getElementById('choicesContainer');
         const addButton = document.getElementById('addChoice');
         const correctTextBlock = document.getElementById('correctTextBlock');
+        const matchingBlock = document.getElementById('matchingBlock');
+        const sequenceBlock = document.getElementById('sequenceBlock');
+        const pairsContainer = document.getElementById('pairsContainer');
+        const sequenceContainer = document.getElementById('sequenceContainer');
+        const addPairBtn = document.getElementById('addPair');
+        const addSequenceBtn = document.getElementById('addSequence');
         let deletedIds = [];
+        let deletedPairIds = [];
+        let deletedSequenceIds = [];
 
-        function toggleChoicesBlock() {
-            const isText = typeSelect.value === 'text';
-            choicesBlock.style.display = isText ? 'none' : 'block';
+        function toggleBlocks() {
+            const type = typeSelect.value;
+            const isText = type === 'text';
+            const isMatching = type === 'matching';
+            const isSequence = type === 'sequence';
+            choicesBlock.style.display = (!isText && !isMatching && !isSequence) ? 'block' : 'none';
+            matchingBlock.style.display = isMatching ? 'block' : 'none';
+            sequenceBlock.style.display = isSequence ? 'block' : 'none';
             correctTextBlock.style.display = isText ? 'block' : 'none';
         }
-        typeSelect.addEventListener('change', toggleChoicesBlock);
-        toggleChoicesBlock();
+        typeSelect.addEventListener('change', toggleBlocks);
+        toggleBlocks();
+
+        addPairBtn.addEventListener('click', function() {
+            const index = pairsContainer.children.length;
+            const row = document.createElement('div');
+            row.className = 'row g-2 mb-2 pair-item';
+            row.innerHTML = `
+                <div class="col-md-5"><input type="text" name="pairs[${index}][left_text]" class="form-control"></div>
+                <div class="col-md-5"><input type="text" name="pairs[${index}][right_text]" class="form-control"></div>
+                <div class="col-md-2"><button type="button" class="btn btn-outline-danger w-100 remove-pair">×</button></div>
+            `;
+            pairsContainer.appendChild(row);
+        });
+
+        addSequenceBtn.addEventListener('click', function() {
+            const index = sequenceContainer.children.length;
+            const row = document.createElement('div');
+            row.className = 'input-group mb-2 sequence-item-row';
+            row.innerHTML = `
+                <span class="input-group-text">${index + 1}</span>
+                <input type="text" name="sequence_items[${index}][item_text]" class="form-control">
+                <button type="button" class="btn btn-outline-danger remove-sequence">×</button>
+            `;
+            sequenceContainer.appendChild(row);
+        });
+
+        sequenceContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-sequence')) {
+                const row = e.target.closest('.sequence-item-row');
+                const idInput = row.querySelector('input[name$="[id]"]');
+                if (idInput && idInput.value) {
+                    deletedSequenceIds.push(idInput.value);
+                    document.getElementById('deletedSequenceItems').value = deletedSequenceIds.join(',');
+                }
+                if (sequenceContainer.children.length > 1) row.remove();
+            }
+        });
+
+        pairsContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-pair')) {
+                const item = e.target.closest('.pair-item');
+                const idInput = item.querySelector('input[name$="[id]"]');
+                if (idInput && idInput.value) {
+                    deletedPairIds.push(idInput.value);
+                    document.getElementById('deletedPairs').value = deletedPairIds.join(',');
+                }
+                if (pairsContainer.children.length > 1) item.remove();
+            }
+        });
 
         addButton.addEventListener('click', function() {
             const index = choicesContainer.children.length;

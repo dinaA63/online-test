@@ -54,7 +54,7 @@ class ManualReviewController extends Controller {
             ]);
         }
 
-        $attempt->load('test.questions.choices', 'answers');
+        $attempt->load('test.questions.choices', 'test.questions.matchingPairs', 'test.questions.sequenceItems', 'answers');
         $totalPoints = 0.0;
         $earned = 0.0;
 
@@ -80,6 +80,29 @@ class ManualReviewController extends Controller {
                 }
             } elseif ($question->type === 'text') {
                 $earned += (float) ($answers->first()->review_score ?? 0);
+            } elseif ($question->type === 'matching') {
+                $answerJson = $answers->first()?->answer_text;
+                $map = json_decode($answerJson ?? '', true);
+                if (is_array($map)) {
+                    $allCorrect = true;
+                    foreach ($question->matchingPairs as $pair) {
+                        $selected = $map[(string) $pair->id] ?? $map[$pair->id] ?? null;
+                        if ($selected === null || mb_strtolower(trim($selected)) !== mb_strtolower(trim($pair->right_text))) {
+                            $allCorrect = false;
+                            break;
+                        }
+                    }
+                    if ($allCorrect && $question->matchingPairs->isNotEmpty()) {
+                        $earned += $questionPoints;
+                    }
+                }
+            } elseif ($question->type === 'sequence') {
+                $payload = json_decode($answers->first()?->answer_text ?? '', true);
+                $userOrder = $payload['order'] ?? [];
+                $correctOrder = $question->sequenceItems->sortBy('correct_order')->pluck('id')->map(fn ($id) => (int) $id)->values()->toArray();
+                if ($userOrder && array_map('intval', $userOrder) === $correctOrder) {
+                    $earned += $questionPoints;
+                }
             }
         }
 

@@ -5,9 +5,14 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="display-6"><i class="fas fa-chalkboard-teacher me-2"></i>Мои тесты</h1>
-        <a href="{{ route('teacher.tests.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i>Создать тест
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('teacher.gift.import.create') }}" class="btn btn-outline-primary">
+                <i class="fas fa-file-import me-1"></i>Импорт GIFT
+            </a>
+            <a href="{{ route('teacher.tests.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Создать тест
+            </a>
+        </div>
     </div>
 
     @if(session('success'))

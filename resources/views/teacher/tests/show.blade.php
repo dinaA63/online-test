@@ -52,7 +52,23 @@
                 <div class="mt-2">
                     <span class="badge bg-info">{{ $question->type_label }}</span>
                 </div>
-                @if($question->type != 'text')
+                @if($question->type === 'sequence')
+                    <ol class="mt-3 mb-0">
+                        @foreach($question->sequenceItems->sortBy('correct_order') as $item)
+                            <li>{{ $item->item_text }}</li>
+                        @endforeach
+                    </ol>
+                @elseif($question->type === 'matching')
+                    <ul class="mt-3 list-unstyled matching-preview">
+                        @foreach($question->matchingPairs as $pair)
+                            <li class="mb-2">
+                                <span class="badge bg-light text-dark">{{ $pair->left_text }}</span>
+                                <i class="fas fa-arrow-right mx-2 text-muted"></i>
+                                <span>{{ $pair->right_text }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @elseif($question->type != 'text')
                     <ul class="mt-3">
                         @foreach($question->choices as $choice)
                             <li>{{ $choice->text }} @if($choice->is_correct) <span class="badge bg-success">Правильный</span> @endif</li>

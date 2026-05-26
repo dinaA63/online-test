@@ -60,7 +60,7 @@ class AttemptController extends Controller
 
         // Если тест завершён — показываем результаты
         if ($attempt->finished_at) {
-            $questions = $test->questions()->with('choices')->get();
+            $questions = $test->questions()->with(['choices', 'matchingPairs', 'sequenceItems'])->get();
             $answers = $attempt->answers()->with('choice')->get()->keyBy('question_id');
             return view('student.attempt.result', compact('attempt', 'test', 'questions', 'answers'));
         }
@@ -83,7 +83,7 @@ class AttemptController extends Controller
             $remainingSeconds = null;
         }
 
-        $questions = $test->questions()->with('choices')->get();
+        $questions = $test->questions()->with(['choices', 'matchingPairs', 'sequenceItems'])->get();
         $allSavedAnswers = $attempt->answers()->get();
         $savedAnswers = $allSavedAnswers->keyBy('question_id');
 
@@ -128,6 +128,10 @@ class AttemptController extends Controller
             'choice_ids'    => 'nullable|array',
             'choice_ids.*'  => 'exists:choices,id',
             'answer_text'   => 'nullable|string',
+            'matching'      => 'nullable|array',
+            'matching.*'    => 'nullable|string',
+            'sequence_order'=> 'nullable|array',
+            'sequence_order.*' => 'integer|exists:sequence_items,id',
         ]);
 
         $question = \App\Models\Question::findOrFail($data['question_id']);
@@ -158,6 +162,20 @@ class AttemptController extends Controller
                 'attempt_id'  => $attempt->id,
                 'question_id' => $data['question_id'],
                 'answer_text' => trim((string) $data['answer_text']),
+                'choice_id'   => null,
+            ]);
+        } elseif ($question->type === 'matching' && isset($data['matching'])) {
+            Answer::create([
+                'attempt_id'  => $attempt->id,
+                'question_id' => $data['question_id'],
+                'answer_text' => json_encode($data['matching'], JSON_UNESCAPED_UNICODE),
+                'choice_id'   => null,
+            ]);
+        } elseif ($question->type === 'sequence' && isset($data['sequence_order'])) {
+            Answer::create([
+                'attempt_id'  => $attempt->id,
+                'question_id' => $data['question_id'],
+                'answer_text' => json_encode(['order' => array_values($data['sequence_order'])], JSON_UNESCAPED_UNICODE),
                 'choice_id'   => null,
             ]);
         }
@@ -207,9 +225,12 @@ class AttemptController extends Controller
                     $isCorrect = true;
                 }
             } elseif ($question->type === 'text') {
-                // Текстовые вопросы оцениваются вручную в кабинете преподавателя.
                 $pendingManualReview = true;
                 $isCorrect = false;
+            } elseif ($question->type === 'matching') {
+                $isCorrect = $this->isMatchingAnswerCorrect($question, $userAnswers->first()?->answer_text);
+            } elseif ($question->type === 'sequence') {
+                $isCorrect = $this->isSequenceAnswerCorrect($question, $userAnswers->first()?->answer_text);
             }
 
             if ($isCorrect) {
@@ -222,5 +243,60 @@ class AttemptController extends Controller
             'score' => $totalPoints > 0 ? round(($earnedPoints / $totalPoints) * 100, 2) : 0,
             'pending_manual_review' => $pendingManualReview,
         ];
+    }
+
+    private function isMatchingAnswerCorrect($question, ?string $answerJson): bool
+    {
+        if (!$answerJson) {
+            return false;
+        }
+
+        $userMap = json_decode($answerJson, true);
+        if (!is_array($userMap) || empty($userMap)) {
+            return false;
+        }
+
+        $pairs = $question->matchingPairs;
+        if ($pairs->isEmpty()) {
+            return false;
+        }
+
+        foreach ($pairs as $pair) {
+            $selected = $userMap[(string) $pair->id] ?? $userMap[$pair->id] ?? null;
+            if ($selected === null) {
+                return false;
+            }
+
+            if (mb_strtolower(trim($selected)) !== mb_strtolower(trim($pair->right_text))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function isSequenceAnswerCorrect($question, ?string $answerJson): bool
+    {
+        if (!$answerJson) {
+            return false;
+        }
+
+        $payload = json_decode($answerJson, true);
+        $userOrder = $payload['order'] ?? null;
+        if (!is_array($userOrder) || empty($userOrder)) {
+            return false;
+        }
+
+        $question->loadMissing('sequenceItems');
+        $correctOrder = $question->sequenceItems
+            ->sortBy('correct_order')
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->values()
+            ->toArray();
+
+        $userOrder = array_map('intval', $userOrder);
+
+        return $correctOrder === $userOrder;
     }
 }

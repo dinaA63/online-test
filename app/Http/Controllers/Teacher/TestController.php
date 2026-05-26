@@ -45,6 +45,8 @@ public function store(Request $request)
 
     public function show(Test $test)
     {
+        $test->load(['questions.choices', 'questions.matchingPairs', 'questions.sequenceItems']);
+
         return view('teacher.tests.show', compact('test'));
     }
 

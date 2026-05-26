@@ -30,6 +30,23 @@
                     ->sort()
                     ->values();
                 $isCorrect = $correctChoiceIds->toArray() == $userChoiceIds->toArray();
+            } elseif ($question->type === 'sequence') {
+                $payload = json_decode($userAnswer->answer_text ?? '{}', true);
+                $userOrder = $payload['order'] ?? [];
+                $correctOrder = $question->sequenceItems->sortBy('correct_order')->pluck('id')->map(fn($id) => (int)$id)->values()->toArray();
+                $isCorrect = !empty($userOrder) && array_map('intval', $userOrder) === $correctOrder;
+            } elseif ($question->type === 'matching') {
+                $map = json_decode($userAnswer->answer_text ?? '{}', true);
+                if (is_array($map) && $question->matchingPairs->isNotEmpty()) {
+                    $isCorrect = true;
+                    foreach ($question->matchingPairs as $pair) {
+                        $selected = $map[(string)$pair->id] ?? $map[$pair->id] ?? null;
+                        if ($selected === null || mb_strtolower(trim($selected)) !== mb_strtolower(trim($pair->right_text))) {
+                            $isCorrect = false;
+                            break;
+                        }
+                    }
+                }
             } elseif ($question->type === 'text') {
                 $correctText = $question->correct_text ?? '';
                 $userText = $userAnswer->answer_text ?? '';
@@ -63,6 +80,22 @@
                                     ->join(', ');
                             @endphp
                             {{ $selected ?: 'Нет ответа' }}
+                        @elseif($question->type === 'sequence')
+                            @php $payload = json_decode($userAnswer->answer_text ?? '{}', true); $order = $payload['order'] ?? []; @endphp
+                            <ol class="mb-0">
+                                @foreach($order as $id)
+                                    <li>{{ $question->sequenceItems->firstWhere('id', (int)$id)?->item_text ?? '—' }}</li>
+                                @endforeach
+                            </ol>
+                        @elseif($question->type === 'matching')
+                            @php
+                                $map = json_decode($userAnswer->answer_text ?? '{}', true) ?: [];
+                            @endphp
+                            <ul class="mb-0">
+                                @foreach($question->matchingPairs as $pair)
+                                    <li>{{ $pair->left_text }} → {{ $map[$pair->id] ?? $map[(string)$pair->id] ?? '—' }}</li>
+                                @endforeach
+                            </ul>
                         @else
                             {{ $userAnswer->answer_text ?? 'Нет ответа' }}
                         @endif
