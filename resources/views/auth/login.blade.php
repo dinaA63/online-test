@@ -5,7 +5,6 @@
             <h3 class="fw-bold mb-1">Добро пожаловать</h3>
             <p class="text-muted small mb-0">Войдите в учётную запись</p>
         </div>
-        <div class="auth-card-body">
             @if (session('status'))
                 <div class="alert alert-success">{{ session('status') }}</div>
             @endif
@@ -40,9 +39,8 @@
                 <button type="submit" class="btn btn-primary w-100 btn-lg">Войти</button>
             </form>
 
-            <p class="text-center text-muted small mt-4 mb-0">
-                Нет аккаунта? <a href="{{ route('register') }}" class="fw-semibold text-decoration-none" style="color: var(--primary);">Регистрация</a>
-            </p>
-        </div>
+        <p class="text-center text-muted small mt-4 mb-0">
+            Нет аккаунта? <a href="{{ route('register') }}" class="fw-semibold text-decoration-none" style="color: var(--primary);">Регистрация</a>
+        </p>
     </div>
 </x-guest-layout>

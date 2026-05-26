@@ -67,8 +67,9 @@ class AttemptController extends Controller
         // Если тест завершён — показываем результаты
         if ($attempt->finished_at) {
             $questions = $test->questions()->with(['choices', 'matchingPairs', 'sequenceItems'])->get();
-            $answers = $attempt->answers()->with('choice')->get()->keyBy('question_id');
-            return view('student.attempt.result', compact('attempt', 'test', 'questions', 'answers'));
+            $answers = $attempt->answers()->with('choice')->get()->groupBy('question_id');
+            $scoring = app(AttemptScoringService::class);
+            return view('student.attempt.result', compact('attempt', 'test', 'questions', 'answers', 'scoring'));
         }
 
         // Проверка времени

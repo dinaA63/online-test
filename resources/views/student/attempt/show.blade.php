@@ -19,9 +19,12 @@
     </script>
 @endif
 @section('content')
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>{{ $attempt->test->title }}</h2>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <p class="page-label mb-1">Прохождение теста</p>
+            <h2 class="page-title mb-0">{{ $attempt->test->title }}</h2>
+        </div>
         <div class="text-end">
             <div class="small text-muted">Прогресс</div>
             <div class="fw-semibold"><span id="answered-count">0</span> / {{ $questions->count() }}</div>
@@ -93,7 +96,7 @@
                                     }
                                 @endphp
                                 <p class="text-muted small mb-2"><i class="fas fa-arrows-alt-v me-1"></i>Перетащите элементы в правильном порядке (сверху вниз)</p>
-                                <ul class="sequence-list list-group" data-question-id="{{ $question->id }}">
+                                <ul class="sequence-list list-group" data-question-id="{{ $question->id }}" data-has-saved="{{ $savedAnswers->has($question->id) ? '1' : '0' }}">
                                     @foreach($seqItems as $item)
                                         <li class="list-group-item sequence-item d-flex align-items-center gap-2" draggable="true" data-item-id="{{ $item->id }}">
                                             <span class="sequence-handle text-muted"><i class="fas fa-grip-vertical"></i></span>
@@ -235,6 +238,9 @@
 
             document.querySelectorAll('.sequence-list').forEach(list => {
                 refreshSequenceNumbers(list);
+                if (list.dataset.hasSaved !== '1') {
+                    saveSequence(list.dataset.questionId);
+                }
                 let dragged = null;
 
                 list.querySelectorAll('.sequence-item').forEach(item => {

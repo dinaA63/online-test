@@ -3,10 +3,8 @@
 @section('title', 'Управление пользователями')
 
 @section('content')
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><i class="fas fa-users-cog me-2"></i>Пользователи</h1>
-    </div>
+<div class="container py-4">
+    <x-page-header title="Пользователи" label="Администрирование" />
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -44,9 +42,9 @@
         </div>
     </form>
 
-    <!-- Таблица пользователей -->
+    <div class="stone-card">
     <div class="table-responsive">
-        <table class="table table-striped align-middle">
+        <table class="table table-minimal align-middle mb-0">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -91,7 +89,7 @@
         </table>
     </div>
 
-    <!-- Пагинация -->
     {{ $users->appends(request()->query())->links() }}
+    </div>
 </div>
 @endsection

@@ -3,45 +3,32 @@
 @section('title', 'Статистика')
 
 @section('content')
-<div class="container">
-    <h1 class="mb-4"><i class="fas fa-chart-pie me-2"></i>Общая статистика</h1>
+<div class="container py-4">
+    <x-page-header title="Статистика" label="Администрирование" />
 
-    <!-- Общие карточки -->
     <div class="row g-4 mb-4">
         <div class="col-sm-6 col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 text-center">
-                <div class="card-body">
-                    <i class="fas fa-user-graduate fa-2x mb-2 text-primary"></i>
-                    <h3 class="fw-bold">{{ $totalStudents }}</h3>
-                    <p class="text-muted mb-0">Студентов</p>
-                </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ $totalStudents }}</div>
+                <div class="stat-label">Студентов</div>
             </div>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 text-center">
-                <div class="card-body">
-                    <i class="fas fa-chalkboard-teacher fa-2x mb-2 text-primary"></i>
-                    <h3 class="fw-bold">{{ $totalTeachers }}</h3>
-                    <p class="text-muted mb-0">Преподавателей</p>
-                </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ $totalTeachers }}</div>
+                <div class="stat-label">Преподавателей</div>
             </div>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 text-center">
-                <div class="card-body">
-                    <i class="fas fa-file-alt fa-2x mb-2 text-primary"></i>
-                    <h3 class="fw-bold">{{ $totalTests }}</h3>
-                    <p class="text-muted mb-0">Тестов</p>
-                </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ $totalTests }}</div>
+                <div class="stat-label">Тестов</div>
             </div>
         </div>
         <div class="col-sm-6 col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 text-center">
-                <div class="card-body">
-                    <i class="fas fa-percent fa-2x mb-2 text-primary"></i>
-                    <h3 class="fw-bold">{{ round($averageScore, 2) }}%</h3>
-                    <p class="text-muted mb-0">Средний балл</p>
-                </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ round($averageScore, 1) }}%</div>
+                <div class="stat-label">Средний балл</div>
             </div>
         </div>
     </div>

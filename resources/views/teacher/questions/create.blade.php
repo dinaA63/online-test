@@ -2,17 +2,21 @@
 @section('title', 'Добавить вопрос')
 
 @section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm rounded-4">
-                <div class="card-header bg-white border-0 pt-4">
-                    <h4 class="mb-0"><i class="fas fa-plus-circle me-2" style="color: var(--primary);"></i>Добавить вопрос в тест "{{ $test->title }}"</h4>
-                </div>
-                <div class="card-body">
-                    <form action="{{ route('teacher.questions.store', $test) }}" method="POST" id="questionForm">
-                        @csrf
+<div class="container py-4">
+    <x-page-header title="Новый вопрос" :label="$test->title">
+        <x-slot:actions>
+            <a href="{{ route('teacher.tests.show', $test) }}" class="btn btn-ghost btn-pill"><i class="fas fa-arrow-left me-1"></i>К тесту</a>
+        </x-slot:actions>
+    </x-page-header>
 
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="stone-card">
+                <form action="{{ route('teacher.questions.store', $test) }}" method="POST" id="questionForm">
+                    @csrf
+
+                    <div class="form-section">
+                        <div class="form-section-title">Основное</div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Текст вопроса</label>
                             <textarea name="text" rows="3" class="form-control" required>{{ old('text') }}</textarea>
@@ -29,30 +33,20 @@
                             </select>
                         </div>
 
-                        <div id="sequenceBlock" style="display: none;">
-                            <label class="form-label fw-semibold">Элементы последовательности (в правильном порядке сверху вниз)</label>
-                            <div id="sequenceContainer">
-                                <div class="input-group mb-2 sequence-item-row">
-                                    <span class="input-group-text">1</span>
-                                    <input type="text" name="sequence_items[0][item_text]" class="form-control" placeholder="Шаг / этап">
-                                    <button type="button" class="btn btn-outline-danger remove-sequence">×</button>
-                                </div>
-                                <div class="input-group mb-2 sequence-item-row">
-                                    <span class="input-group-text">2</span>
-                                    <input type="text" name="sequence_items[1][item_text]" class="form-control" placeholder="Шаг / этап">
-                                    <button type="button" class="btn btn-outline-danger remove-sequence">×</button>
-                                </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Баллы</label>
+                                <input type="number" name="points" class="form-control" value="{{ old('points', 1) }}" min="1">
                             </div>
-                            <button type="button" id="addSequence" class="btn btn-sm btn-outline-primary mt-2"><i class="fas fa-plus"></i> Добавить шаг</button>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Порядок</label>
+                                <input type="number" name="order" class="form-control" value="{{ old('order', 0) }}">
+                            </div>
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Баллы за вопрос</label>
-                            <input type="number" name="points" class="form-control" value="{{ old('points', 1) }}" min="1">
-                        </div>
-
-                        <div id="matchingBlock" style="display: {{ old('type') === 'matching' ? 'block' : 'none' }};">
-                            <label class="form-label fw-semibold">Пары соответствия</label>
+                    <div class="form-section" id="matchingBlock" style="display: {{ old('type') === 'matching' ? 'block' : 'none' }};">
+                        <div class="form-section-title">Пары соответствия</div>
                             <div id="pairsContainer">
                                 <div class="row g-2 mb-2 pair-item">
                                     <div class="col-md-5"><input type="text" name="pairs[0][left_text]" class="form-control" placeholder="Левая колонка"></div>
@@ -65,11 +59,28 @@
                                     <div class="col-md-2"><button type="button" class="btn btn-outline-danger w-100 remove-pair">×</button></div>
                                 </div>
                             </div>
-                            <button type="button" id="addPair" class="btn btn-sm btn-outline-primary mt-2"><i class="fas fa-plus"></i> Добавить пару</button>
-                        </div>
+                            <button type="button" id="addPair" class="btn btn-sm btn-ghost btn-pill mt-2"><i class="fas fa-plus"></i> Добавить пару</button>
+                    </div>
 
-                        <div id="choicesBlock" style="display: {{ in_array(old('type', 'single_choice'), ['single_choice','multiple_choice']) ? 'block' : 'none' }};">
-                            <label class="form-label fw-semibold">Варианты ответов</label>
+                    <div class="form-section" id="sequenceBlock" style="display: none;">
+                        <div class="form-section-title">Последовательность (сверху вниз — правильный порядок)</div>
+                        <div id="sequenceContainer">
+                            <div class="input-group mb-2 sequence-item-row">
+                                <span class="input-group-text">1</span>
+                                <input type="text" name="sequence_items[0][item_text]" class="form-control" placeholder="Шаг / этап">
+                                <button type="button" class="btn btn-outline-danger remove-sequence">×</button>
+                            </div>
+                            <div class="input-group mb-2 sequence-item-row">
+                                <span class="input-group-text">2</span>
+                                <input type="text" name="sequence_items[1][item_text]" class="form-control" placeholder="Шаг / этап">
+                                <button type="button" class="btn btn-outline-danger remove-sequence">×</button>
+                            </div>
+                        </div>
+                        <button type="button" id="addSequence" class="btn btn-sm btn-ghost btn-pill mt-2"><i class="fas fa-plus"></i> Добавить шаг</button>
+                    </div>
+
+                    <div class="form-section" id="choicesBlock" style="display: {{ in_array(old('type', 'single_choice'), ['single_choice','multiple_choice']) ? 'block' : 'none' }};">
+                        <div class="form-section-title">Варианты ответов</div>
                             <div id="choicesContainer">
                                 <div class="input-group mb-2 choice-item">
                                     <input type="text" name="choices[0][text]" class="form-control" placeholder="Текст варианта">
@@ -80,26 +91,21 @@
                                     <button type="button" class="btn btn-outline-danger remove-choice">×</button>
                                 </div>
                             </div>
-                            <button type="button" id="addChoice" class="btn btn-sm btn-outline-primary mt-2"><i class="fas fa-plus"></i> Добавить вариант</button>
-                        </div>
+                            <button type="button" id="addChoice" class="btn btn-sm btn-ghost btn-pill mt-2"><i class="fas fa-plus"></i> Добавить вариант</button>
+                    </div>
 
-                        <div class="mb-3" id="correctTextBlock" style="display: {{ old('type') === 'text' ? 'block' : 'none' }};">
+                    <div class="form-section" id="correctTextBlock" style="display: {{ old('type') === 'text' ? 'block' : 'none' }};">
+                        <div class="form-section-title">Текстовый ответ</div>
                             <label class="form-label fw-semibold">Эталонный ответ (необязательно)</label>
                             <textarea name="correct_text" rows="3" class="form-control" placeholder="Можно оставить пустым. Проверка текстовых ответов выполняется вручную.">{{ old('correct_text') }}</textarea>
-                            <div class="form-text">Нужен как ориентир при проверке преподавателем.</div>
-                        </div>
+                            <div class="form-text">Ориентир при ручной проверке.</div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Порядок (необязательно)</label>
-                            <input type="number" name="order" class="form-control" value="{{ old('order', 0) }}">
-                        </div>
-
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{{ route('teacher.tests.show', $test) }}" class="btn btn-secondary">Отмена</a>
-                            <button type="submit" class="btn btn-primary">Сохранить вопрос</button>
-                        </div>
-                    </form>
-                </div>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-pill">Сохранить вопрос</button>
+                        <a href="{{ route('teacher.tests.show', $test) }}" class="btn btn-ghost btn-pill">Отмена</a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

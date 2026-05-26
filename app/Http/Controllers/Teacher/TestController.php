@@ -89,10 +89,20 @@ public function store(Request $request)
     public function exportCsv(Test $test)
     {
         $this->authorizeTest($test);
-        $service = new TestResultsExportService();
-        $filename = 'results_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $test->title) . '.csv';
+        $filename = 'results_' . $this->safeFilename($test->title) . '.csv';
 
-        return Response::make($service->toCsv($test), 200, [
+        return Response::make(app(TestResultsExportService::class)->toCsv($test), 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
+    public function exportDetailedCsv(Test $test)
+    {
+        $this->authorizeTest($test);
+        $filename = 'results_detailed_' . $this->safeFilename($test->title) . '.csv';
+
+        return Response::make(app(TestResultsExportService::class)->toDetailedCsv($test), 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
@@ -101,13 +111,17 @@ public function store(Request $request)
     public function exportExcel(Test $test)
     {
         $this->authorizeTest($test);
-        $service = new TestResultsExportService();
-        $filename = 'results_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $test->title) . '.xls';
+        $filename = 'results_' . $this->safeFilename($test->title) . '.xls';
 
-        return Response::make($service->toExcelHtml($test), 200, [
+        return Response::make(app(TestResultsExportService::class)->toExcelHtml($test, true), 200, [
             'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
+    }
+
+    private function safeFilename(string $title): string
+    {
+        return preg_replace('/[^a-zA-Z0-9_-]/', '_', $title) ?: 'test';
     }
 
     private function authorizeTest(Test $test): void

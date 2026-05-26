@@ -34,6 +34,10 @@ Route::get('/', function () {
     return view('home');
 })->name('home');
 
+Route::get('/dashboard', function () {
+    return redirect()->route('home');
+})->middleware('auth')->name('dashboard');
+
 /*
 |--------------------------------------------------------------------------
 | Маршруты аутентификации (Breeze)
@@ -68,6 +72,7 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
     // Статистика и экспорт (для конкретного теста)
     Route::get('tests/{test}/statistics', [TestController::class, 'statistics'])->name('tests.statistics');
     Route::get('tests/{test}/export/csv', [TestController::class, 'exportCsv'])->name('tests.export.csv');
+    Route::get('tests/{test}/export/csv/detailed', [TestController::class, 'exportDetailedCsv'])->name('tests.export.csv.detailed');
     Route::get('tests/{test}/export/excel', [TestController::class, 'exportExcel'])->name('tests.export.excel');
 
     // Ручная проверка ответов

@@ -24,9 +24,9 @@ class ManualReviewController extends Controller {
         }
 
         $essayAnswers = Answer::where('attempt_id', $attempt->id)
-                              ->whereHas('question', fn($q) => $q->where('type', 'text'))
-                              ->with('question')
-                              ->get();
+            ->whereHas('question', fn ($q) => $q->where('type', 'text'))
+            ->with(['question'])
+            ->get();
         return view('teacher.reviews.show', compact('attempt', 'essayAnswers'));
     }
     public function review(Request $request, Attempt $attempt) {

@@ -162,6 +162,54 @@ class AttemptScoringService
         return array_map('intval', $userOrder) === $correctOrder;
     }
 
+    public function isQuestionCorrect(Question $question, $userAnswers): bool
+    {
+        $answers = $userAnswers instanceof \Illuminate\Support\Collection
+            ? $userAnswers
+            : collect($userAnswers ? [$userAnswers] : []);
+
+        if ($answers->isEmpty()) {
+            return false;
+        }
+
+        return match ($question->type) {
+            'single_choice' => $this->isSingleChoiceCorrect($question, $answers),
+            'multiple_choice' => $this->isMultipleChoiceCorrect($question, $answers),
+            'text' => $this->isTextCorrect($question, $answers->first()),
+            'matching' => $this->isMatchingCorrect($question, $answers->first()?->answer_text),
+            'sequence' => $this->isSequenceCorrect($question, $answers->first()?->answer_text),
+            default => false,
+        };
+    }
+
+    public function pointsEarned(Question $question, $userAnswers): float
+    {
+        $max = (float) ($question->points ?? 1);
+        $answers = $userAnswers instanceof \Illuminate\Support\Collection
+            ? $userAnswers
+            : collect($userAnswers ? [$userAnswers] : []);
+
+        if ($question->type === 'text') {
+            $answer = $answers->first();
+            if ($answer?->reviewed_at !== null) {
+                return min((float) ($answer->review_score ?? 0), $max);
+            }
+
+            return 0;
+        }
+
+        return $this->isQuestionCorrect($question, $answers) ? $max : 0;
+    }
+
+    private function isTextCorrect(Question $question, ?\App\Models\Answer $answer): bool
+    {
+        if (!$answer || empty($question->correct_text)) {
+            return false;
+        }
+
+        return $this->normalize($answer->answer_text ?? '') === $this->normalize($question->correct_text);
+    }
+
     private function normalize(string $value): string
     {
         return mb_strtolower(trim(preg_replace('/\s+/u', ' ', $value) ?? $value));

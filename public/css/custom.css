@@ -372,6 +372,176 @@ body {
     text-align: center;
 }
 
+/* ——— Page layout ——— */
+.container.py-4 { padding-top: 1.5rem; padding-bottom: 2rem; }
+
+.page-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.page-label, .page-subtitle {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+}
+
+.page-title {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.page-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+/* ——— Stat cards ——— */
+.stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    text-align: center;
+    height: 100%;
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1;
+}
+
+.stat-card .stat-label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+/* ——— Badges ——— */
+.badge-soft {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge-soft-success { background: #dcfce7; color: #166534; }
+.badge-soft-danger { background: #fee2e2; color: #991b1b; }
+.badge-soft-warning { background: #fef3c7; color: #92400e; }
+.badge-soft-info { background: var(--primary-soft); color: var(--primary-dark); }
+.badge-soft-muted { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+
+/* ——— Tiles (test cards) ——— */
+.tile-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition);
+}
+
+.tile-card:hover { border-color: #d1d5db; }
+
+.tile-card-header {
+    padding: 1.25rem 1.25rem 0;
+    font-weight: 700;
+    font-size: 1.05rem;
+}
+
+.tile-card-body {
+    padding: 1rem 1.25rem;
+    flex-grow: 1;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.tile-card-footer {
+    padding: 0 1.25rem 1.25rem;
+}
+
+/* ——— Question result ——— */
+.question-result { border-left: 3px solid var(--border); }
+.question-result--ok { border-left-color: #22c55e; }
+.question-result--fail { border-left-color: #ef4444; }
+
+.review-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 1rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-muted);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.btn-outline-secondary {
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 2rem;
+}
+
+.btn-outline-secondary:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-soft);
+}
+
+.btn-success { background: var(--primary); border: none; border-radius: 2rem; }
+.btn-success:hover { background: var(--primary-dark); }
+
+.btn-danger { border-radius: 2rem; }
+
+.modal-content { border: 1px solid var(--border); border-radius: var(--radius); }
+.modal-header, .modal-footer { border-color: var(--border); }
+
+.input-group-text {
+    background: var(--bg);
+    border-color: var(--border);
+}
+
+.auth-card-header { text-align: center; margin-bottom: 1.5rem; }
+
+/* ——— Question forms ——— */
+.form-section {
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+}
+
+.form-section:last-of-type { border-bottom: none; }
+
+.form-section-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.dynamic-row { margin-bottom: 0.5rem; }
+
 @media (max-width: 768px) {
     .matching-row { grid-template-columns: 1fr; }
 }

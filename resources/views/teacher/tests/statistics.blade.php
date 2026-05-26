@@ -2,138 +2,80 @@
 @section('title', 'Статистика: '.$test->title)
 
 @section('content')
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <h1 class="display-6"><i class="fas fa-chart-line me-2" style="color: var(--primary);"></i>Статистика теста "{{ $test->title }}"</h1>
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ route('teacher.tests.export.csv', $test) }}" class="btn btn-outline-primary rounded-pill"><i class="fas fa-file-csv me-1"></i>CSV</a>
-            <a href="{{ route('teacher.tests.export.excel', $test) }}" class="btn btn-outline-primary rounded-pill"><i class="fas fa-file-excel me-1"></i>Excel</a>
-            <a href="{{ route('teacher.tests.show', $test) }}" class="btn btn-ghost rounded-pill"><i class="fas fa-arrow-left me-1"></i>Назад</a>
-        </div>
+<div class="container py-4">
+    <x-page-header :title="'Статистика: ' . $test->title" label="Аналитика">
+        <x-slot:actions>
+            <a href="{{ route('teacher.tests.export.csv', $test) }}" class="btn btn-ghost btn-pill"><i class="fas fa-file-csv me-1"></i>CSV</a>
+            <a href="{{ route('teacher.tests.export.csv.detailed', $test) }}" class="btn btn-ghost btn-pill">Детальный CSV</a>
+            <a href="{{ route('teacher.tests.export.excel', $test) }}" class="btn btn-ghost btn-pill"><i class="fas fa-file-excel me-1"></i>Excel (листы)</a>
+            <a href="{{ route('teacher.tests.show', $test) }}" class="btn btn-ghost btn-pill"><i class="fas fa-arrow-left"></i></a>
+        </x-slot:actions>
+    </x-page-header>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4"><div class="stat-card"><div class="stat-value">{{ $totalAttempts }}</div><div class="stat-label">Всего попыток</div></div></div>
+        <div class="col-md-4"><div class="stat-card"><div class="stat-value">{{ round($averageScore, 1) }}%</div><div class="stat-label">Средний балл</div></div></div>
+        <div class="col-md-4"><div class="stat-card"><div class="stat-value">{{ $test->max_attempts }}</div><div class="stat-label">Макс. попыток</div></div></div>
     </div>
 
-    <!-- Карточки статистики -->
-    <div class="row mb-4 g-4">
-        <div class="col-md-4">
-            <div class="card text-center border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body">
-                    <i class="fas fa-chart-simple fa-2x mb-2" style="color: var(--primary);"></i>
-                    <h3 class="card-title fw-bold">{{ $totalAttempts }}</h3>
-                    <p class="card-text text-muted">Всего попыток</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-center border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body">
-                    <i class="fas fa-percent fa-2x mb-2" style="color: var(--primary);"></i>
-                    <h3 class="card-title fw-bold">{{ round($averageScore, 2) }}%</h3>
-                    <p class="card-text text-muted">Средний балл</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-center border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body">
-                    <i class="fas fa-redo-alt fa-2x mb-2" style="color: var(--primary);"></i>
-                    <h3 class="card-title fw-bold">{{ $test->max_attempts }}</h3>
-                    <p class="card-text text-muted">Макс. попыток</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- График результатов -->
     @if($scores->count() > 0)
-        <div class="card mb-4 border-0 shadow-sm rounded-4">
-            <div class="card-header bg-white border-0 pt-4">
-                <h5 class="mb-0 fw-semibold"><i class="fas fa-chart-line me-2" style="color: var(--primary);"></i>Динамика результатов попыток</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="scoreChart" width="400" height="200"></canvas>
-            </div>
+        <div class="stone-card mb-4">
+            <h2 class="h6 fw-bold mb-3">Динамика попыток</h2>
+            <canvas id="scoreChart" height="120"></canvas>
         </div>
-    @else
-        <div class="alert alert-info rounded-4">Нет данных для построения графика.</div>
     @endif
 
-    <!-- Таблица студентов и их средний балл -->
-    <div class="card border-0 shadow-sm rounded-4 mt-4">
-        <div class="card-header bg-white border-0 pt-4">
-            <h5 class="mb-0 fw-semibold"><i class="fas fa-users me-2" style="color: var(--primary);"></i>Результаты студентов</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
+    <div class="stone-card">
+        <h2 class="h6 fw-bold mb-3">Результаты студентов</h2>
+        <div class="table-responsive">
+            <table class="table table-minimal mb-0">
+                <thead><tr><th>Студент</th><th>Средний %</th></tr></thead>
+                <tbody>
+                    @forelse($studentResults as $student => $avg)
                         <tr>
-                            <th><i class="fas fa-user-graduate me-1"></i> Студент</th>
-                            <th><i class="fas fa-chart-simple me-1"></i> Средний результат (%)</th>
+                            <td class="fw-semibold">{{ $student }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1"><div class="progress-bar" style="width: {{ min(100, $avg) }}%"></div></div>
+                                    <span class="badge-soft badge-soft-info">{{ round($avg, 1) }}%</span>
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($studentResults as $student => $avg)
-                            <tr>
-                                <td class="fw-semibold">{{ $student }}</td>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="progress flex-grow-1" style="height: 8px; border-radius: 1rem;">
-                                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $avg }}%;" aria-valuenow="{{ $avg }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                        </div>
-                                        <span class="badge bg-primary rounded-pill px-3 py-2">{{ round($avg, 2) }}%</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="2" class="text-center text-muted">Нет результатов студентов</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                    @empty
+                        <tr><td colspan="2" class="text-muted text-center">Нет данных</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 @endsection
 
 @push('scripts')
+@if($scores->count() > 0)
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const canvas = document.getElementById('scoreChart');
-        if (canvas && {{ $scores->count() > 0 ? 'true' : 'false' }}) {
-            const scores = @json($scores);
-            const labels = scores.map((_, i) => 'Попытка ' + (i + 1));
-            new Chart(canvas.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Результат (%)',
-                        data: scores,
-                        borderColor: '#1E90FF',
-                        backgroundColor: 'rgba(30, 144, 255, 0.05)',
-                        borderWidth: 3,
-                        pointBackgroundColor: '#1E90FF',
-                        pointBorderColor: '#fff',
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                        tension: 0.2,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'top' },
-                        tooltip: { callbacks: { label: (ctx) => ctx.raw.toFixed(2) + '%' } }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, max: 100, title: { display: true, text: 'Процент правильных ответов' } },
-                        x: { title: { display: true, text: 'Номер попытки' } }
-                    }
-                }
-            });
+document.addEventListener('DOMContentLoaded', function() {
+    const scores = @json($scores);
+    new Chart(document.getElementById('scoreChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: scores.map((_, i) => 'Попытка ' + (i + 1)),
+            datasets: [{
+                label: 'Результат (%)',
+                data: scores,
+                borderColor: '#1E90FF',
+                backgroundColor: 'rgba(30, 144, 255, 0.08)',
+                tension: 0.25,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { min: 0, max: 100 } }
         }
     });
+});
 </script>
+@endif
 @endpush

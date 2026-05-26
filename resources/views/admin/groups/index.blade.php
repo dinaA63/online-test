@@ -3,11 +3,12 @@
 @section('title', 'Управление группами')
 
 @section('content')
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="display-6"><i class="fas fa-users me-2" style="color: var(--primary);"></i>Группы пользователей</h1>
-        <a href="{{ route('admin.groups.create') }}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Создать группу</a>
-    </div>
+<div class="container py-4">
+    <x-page-header title="Группы" label="Администрирование">
+        <x-slot:actions>
+            <a href="{{ route('admin.groups.create') }}" class="btn btn-primary btn-pill"><i class="fas fa-plus me-1"></i>Создать</a>
+        </x-slot:actions>
+    </x-page-header>
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show rounded-4" role="alert">

@@ -2,90 +2,78 @@
 @section('title', $test->title)
 
 @section('content')
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="display-6">{{ $test->title }}</h1>
-        <div>
-            <a href="{{ route('teacher.tests.edit', $test) }}" class="btn btn-outline-secondary"><i class="fas fa-edit"></i> Редактировать</a>
-            <a href="{{ route('teacher.tests.statistics', $test) }}" class="btn btn-outline-primary"><i class="fas fa-chart-bar"></i> Статистика</a>
-            <a href="{{ route('teacher.tests.export.csv', $test) }}" class="btn btn-outline-primary"><i class="fas fa-file-csv"></i> CSV</a>
-            <a href="{{ route('teacher.tests.export.excel', $test) }}" class="btn btn-outline-primary"><i class="fas fa-file-excel"></i> Excel</a>
-        </div>
-    </div>
-
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-
-    <div class="card mb-4">
-        <div class="card-body">
-            <p class="card-text">{{ $test->description ?: 'Описание отсутствует' }}</p>
-            <div class="row mt-3">
-                <div class="col-md-4"><i class="fas fa-clock me-2"></i>Время: {{ $test->time_limit ? $test->time_limit.' мин' : 'без ограничений' }}</div>
-                <div class="col-md-4"><i class="fas fa-redo me-2"></i>Попыток: {{ $test->max_attempts }}</div>
-                <div class="col-md-4"><i class="fas fa-question-circle me-2"></i>Вопросов: {{ $test->questions->count() }}</div>
+<div class="container py-4">
+    <x-page-header :title="$test->title" label="Тест">
+        <x-slot:actions>
+            <a href="{{ route('teacher.tests.edit', $test) }}" class="btn btn-ghost btn-pill"><i class="fas fa-edit"></i></a>
+            <a href="{{ route('teacher.tests.statistics', $test) }}" class="btn btn-ghost btn-pill"><i class="fas fa-chart-bar me-1"></i>Статистика</a>
+            <div class="dropdown">
+                <button class="btn btn-primary btn-pill dropdown-toggle" data-bs-toggle="dropdown">Экспорт</button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{{ route('teacher.tests.export.csv', $test) }}"><i class="fas fa-file-csv me-2"></i>CSV (сводка)</a></li>
+                    <li><a class="dropdown-item" href="{{ route('teacher.tests.export.csv.detailed', $test) }}"><i class="fas fa-file-csv me-2"></i>CSV (по вопросам)</a></li>
+                    <li><a class="dropdown-item" href="{{ route('teacher.tests.export.excel', $test) }}"><i class="fas fa-file-excel me-2"></i>Excel (листы по попыткам)</a></li>
+                </ul>
             </div>
+        </x-slot:actions>
+    </x-page-header>
+
+    <div class="stone-card mb-4">
+        <p class="mb-3">{{ $test->description ?: 'Описание не задано' }}</p>
+        <div class="row g-3 text-muted small">
+            <div class="col-md-4"><i class="fas fa-clock me-2"></i>{{ $test->time_limit ? $test->time_limit.' мин' : 'Без лимита' }}</div>
+            <div class="col-md-4"><i class="fas fa-redo me-2"></i>Попыток: {{ $test->max_attempts }}</div>
+            <div class="col-md-4"><i class="fas fa-question-circle me-2"></i>Вопросов: {{ $test->questions->count() }}</div>
         </div>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3><i class="fas fa-list me-2"></i>Вопросы</h3>
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h2 class="h5 fw-bold mb-0">Вопросы</h2>
         <div class="d-flex gap-2">
-            <a href="{{ route('teacher.questions.create', $test) }}" class="btn btn-success"><i class="fas fa-plus"></i> Добавить вопрос</a>
-            <a href="{{ route('teacher.gift.import.create') }}?test_id={{ $test->id }}" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-file-import"></i> Импорт GIFT
-            </a>
+            <a href="{{ route('teacher.questions.create', $test) }}" class="btn btn-primary btn-pill"><i class="fas fa-plus me-1"></i>Добавить</a>
+            <a href="{{ route('teacher.gift.import.create') }}?test_id={{ $test->id }}" class="btn btn-ghost btn-pill"><i class="fas fa-file-import me-1"></i>GIFT</a>
         </div>
     </div>
 
     @forelse($test->questions as $question)
-        <div class="card mb-3">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <h5 class="card-title">{{ $question->text }}</h5>
-                    <div>
-                        <a href="{{ route('teacher.questions.edit', $question) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
-                        <form action="{{ route('teacher.questions.destroy', $question) }}" method="POST" style="display:inline">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить вопрос?')"><i class="fas fa-trash"></i></button>
-                        </form>
-                    </div>
+        <div class="stone-card mb-3">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <h5 class="fw-semibold mb-2">{{ $question->text }}</h5>
+                    <span class="badge-soft badge-soft-info">{{ $question->type_label }}</span>
+                    <span class="badge-soft badge-soft-muted">{{ $question->points ?? 1 }} б.</span>
                 </div>
-                <div class="mt-2">
-                    <span class="badge bg-info">{{ $question->type_label }}</span>
+                <div class="d-flex gap-1">
+                    <a href="{{ route('teacher.questions.edit', $question) }}" class="btn btn-ghost btn-sm btn-pill"><i class="fas fa-edit"></i></a>
+                    <form action="{{ route('teacher.questions.destroy', $question) }}" method="POST" onsubmit="return confirm('Удалить вопрос?')">@csrf @method('DELETE')
+                        <button type="submit" class="btn btn-outline-danger btn-sm btn-pill"><i class="fas fa-trash"></i></button>
+                    </form>
                 </div>
-                @if($question->type === 'sequence')
-                    <ol class="mt-3 mb-0">
-                        @foreach($question->sequenceItems->sortBy('correct_order') as $item)
-                            <li>{{ $item->item_text }}</li>
-                        @endforeach
-                    </ol>
-                @elseif($question->type === 'matching')
-                    <ul class="mt-3 list-unstyled matching-preview">
-                        @foreach($question->matchingPairs as $pair)
-                            <li class="mb-2">
-                                <span class="badge bg-light text-dark">{{ $pair->left_text }}</span>
-                                <i class="fas fa-arrow-right mx-2 text-muted"></i>
-                                <span>{{ $pair->right_text }}</span>
-                            </li>
-                        @endforeach
-                    </ul>
-                @elseif($question->type != 'text')
-                    <ul class="mt-3">
-                        @foreach($question->choices as $choice)
-                            <li>{{ $choice->text }} @if($choice->is_correct) <span class="badge bg-success">Правильный</span> @endif</li>
-                        @endforeach
-                    </ul>
-                @else
-                    <div class="mt-3 p-2 rounded bg-light">
-                        <small class="text-muted d-block mb-1">Эталонный ответ:</small>
-                        <span>{{ $question->correct_text ?: 'Не задан. Проверка полностью ручная.' }}</span>
-                    </div>
-                @endif
             </div>
+            @if($question->type === 'sequence')
+                <ol class="mt-3 mb-0 ps-3">
+                    @foreach($question->sequenceItems->sortBy('correct_order') as $item)
+                        <li>{{ $item->item_text }}</li>
+                    @endforeach
+                </ol>
+            @elseif($question->type === 'matching')
+                <ul class="mt-3 mb-0 list-unstyled">
+                    @foreach($question->matchingPairs as $pair)
+                        <li class="mb-1"><span class="fw-semibold">{{ $pair->left_text }}</span> → {{ $pair->right_text }}</li>
+                    @endforeach
+                </ul>
+            @elseif($question->type !== 'text')
+                <ul class="mt-3 mb-0">
+                    @foreach($question->choices as $choice)
+                        <li>{{ $choice->text }} @if($choice->is_correct)<span class="badge-soft badge-soft-success ms-1">верно</span>@endif</li>
+                    @endforeach
+                </ul>
+            @else
+                <p class="mt-3 mb-0 text-muted small"><strong>Эталон:</strong> {{ $question->correct_text ?: 'Ручная проверка' }}</p>
+            @endif
         </div>
     @empty
-        <div class="alert alert-warning">Вопросов пока нет. Добавьте первый вопрос!</div>
+        <div class="empty-state">Вопросов пока нет. <a href="{{ route('teacher.questions.create', $test) }}">Добавить первый</a></div>
     @endforelse
 </div>
 @endsection

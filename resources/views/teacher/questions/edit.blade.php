@@ -2,17 +2,21 @@
 @section('title', 'Редактировать вопрос')
 
 @section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm rounded-4">
-                <div class="card-header bg-white border-0 pt-4">
-                    <h4 class="mb-0"><i class="fas fa-edit me-2" style="color: var(--primary);"></i>Редактирование вопроса</h4>
-                </div>
-                <div class="card-body">
-                    <form action="{{ route('teacher.questions.update', $question) }}" method="POST">
-                        @csrf @method('PUT')
+<div class="container py-4">
+    <x-page-header title="Редактирование вопроса" :label="$question->test->title">
+        <x-slot:actions>
+            <a href="{{ route('teacher.tests.show', $question->test) }}" class="btn btn-ghost btn-pill"><i class="fas fa-arrow-left me-1"></i>К тесту</a>
+        </x-slot:actions>
+    </x-page-header>
 
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="stone-card">
+                <form action="{{ route('teacher.questions.update', $question) }}" method="POST">
+                    @csrf @method('PUT')
+
+                    <div class="form-section">
+                        <div class="form-section-title">Основное</div>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Текст вопроса</label>
                             <textarea name="text" rows="3" class="form-control" required>{{ old('text', $question->text) }}</textarea>
@@ -29,8 +33,10 @@
                             </select>
                         </div>
 
-                        <div id="sequenceBlock" style="display: {{ old('type', $question->type) === 'sequence' ? 'block' : 'none' }};">
-                            <label class="form-label fw-semibold">Элементы последовательности (правильный порядок)</label>
+                    </div>
+
+                    <div class="form-section" id="sequenceBlock" style="display: {{ old('type', $question->type) === 'sequence' ? 'block' : 'none' }};">
+                        <div class="form-section-title">Последовательность</div>
                             <div id="sequenceContainer">
                                 @forelse($question->sequenceItems->sortBy('correct_order') as $index => $item)
                                     <div class="input-group mb-2 sequence-item-row">
@@ -47,12 +53,12 @@
                                     </div>
                                 @endforelse
                             </div>
-                            <button type="button" id="addSequence" class="btn btn-sm btn-outline-primary mt-2"><i class="fas fa-plus"></i> Добавить шаг</button>
+                            <button type="button" id="addSequence" class="btn btn-sm btn-ghost btn-pill mt-2"><i class="fas fa-plus"></i> Добавить шаг</button>
                             <input type="hidden" name="deleted_sequence_items" id="deletedSequenceItems" value="">
-                        </div>
+                    </div>
 
-                        <div id="matchingBlock" style="display: {{ old('type', $question->type) === 'matching' ? 'block' : 'none' }};">
-                            <label class="form-label fw-semibold">Пары соответствия</label>
+                    <div class="form-section" id="matchingBlock" style="display: {{ old('type', $question->type) === 'matching' ? 'block' : 'none' }};">
+                        <div class="form-section-title">Пары соответствия</div>
                             <div id="pairsContainer">
                                 @forelse($question->matchingPairs as $index => $pair)
                                     <div class="row g-2 mb-2 pair-item">
@@ -69,12 +75,12 @@
                                     </div>
                                 @endforelse
                             </div>
-                            <button type="button" id="addPair" class="btn btn-sm btn-outline-primary mt-2"><i class="fas fa-plus"></i> Добавить пару</button>
+                            <button type="button" id="addPair" class="btn btn-sm btn-ghost btn-pill mt-2"><i class="fas fa-plus"></i> Добавить пару</button>
                             <input type="hidden" name="deleted_pairs" id="deletedPairs" value="">
-                        </div>
+                    </div>
 
-                        <div id="choicesBlock" style="display: {{ in_array(old('type', $question->type), ['single_choice','multiple_choice']) ? 'block' : 'none' }};">
-                            <label class="form-label fw-semibold">Варианты ответов</label>
+                    <div class="form-section" id="choicesBlock" style="display: {{ in_array(old('type', $question->type), ['single_choice','multiple_choice']) ? 'block' : 'none' }};">
+                        <div class="form-section-title">Варианты ответов</div>
                             <div id="choicesContainer">
                                 @foreach($question->choices as $index => $choice)
                                     <div class="input-group mb-2 choice-item" data-id="{{ $choice->id }}">
@@ -88,32 +94,35 @@
                                     </div>
                                 @endforeach
                             </div>
-                            <button type="button" id="addChoice" class="btn btn-sm btn-outline-primary mt-2"><i class="fas fa-plus"></i> Добавить вариант</button>
+                            <button type="button" id="addChoice" class="btn btn-sm btn-ghost btn-pill mt-2"><i class="fas fa-plus"></i> Добавить вариант</button>
                             <input type="hidden" name="deleted_choices" id="deletedChoices" value="">
-                        </div>
+                    </div>
 
-                        <div class="mb-3" id="correctTextBlock" style="display: {{ old('type', $question->type) === 'text' ? 'block' : 'none' }};">
-                            <label class="form-label fw-semibold">Эталонный ответ (необязательно)</label>
+                    <div class="form-section" id="correctTextBlock" style="display: {{ old('type', $question->type) === 'text' ? 'block' : 'none' }};">
+                        <div class="form-section-title">Текстовый ответ</div>
+                        <label class="form-label fw-semibold">Эталон (необязательно)</label>
                             <textarea name="correct_text" rows="3" class="form-control" placeholder="Используется как ориентир при ручной проверке.">{{ old('correct_text', $question->correct_text) }}</textarea>
-                            <div class="form-text">Текстовые ответы студентов проверяются вручную в личном кабинете преподавателя.</div>
-                        </div>
+                            <div class="form-text">Проверка выполняется вручную в разделе «Проверка».</div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Баллы за вопрос</label>
-                            <input type="number" name="points" class="form-control" value="{{ old('points', $question->points ?? 1) }}" min="1">
+                    <div class="form-section">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Баллы</label>
+                                <input type="number" name="points" class="form-control" value="{{ old('points', $question->points ?? 1) }}" min="1">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Порядок</label>
+                                <input type="number" name="order" class="form-control" value="{{ old('order', $question->order) }}">
+                            </div>
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Порядок</label>
-                            <input type="number" name="order" class="form-control" value="{{ old('order', $question->order) }}">
-                        </div>
-
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{{ route('teacher.tests.show', $question->test) }}" class="btn btn-secondary">Отмена</a>
-                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                        </div>
-                    </form>
-                </div>
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-pill">Сохранить</button>
+                        <a href="{{ route('teacher.tests.show', $question->test) }}" class="btn btn-ghost btn-pill">Отмена</a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
