@@ -7,7 +7,7 @@
     <div class="row justify-content-center">
         <div class="col-lg-7">
             <div class="stone-card mb-4">
-                <p class="text-muted mb-4">Загрузите файл Moodle GIFT (.txt) или используйте <code>gift.txt</code> из корня проекта.</p>
+                <p class="text-muted mb-4">Загрузите файл Moodle GIFT (.txt).</p>
                 <form action="{{ route('teacher.gift.import') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="mb-3">
