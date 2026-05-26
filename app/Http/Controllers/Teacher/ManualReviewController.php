@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Teacher;
 use App\Http\Controllers\Controller;
 use App\Models\Attempt;
 use App\Models\Answer;
+use App\Services\AttemptScoringService;
 use Illuminate\Http\Request;
 
 class ManualReviewController extends Controller {
@@ -47,66 +48,14 @@ class ManualReviewController extends Controller {
             $maxScore = $answer->question->points ?? 1;
             $safeScore = min((float) $score, (float) $maxScore);
             $answer->update([
-                'is_correct' => $safeScore >= $maxScore,
+                'is_correct' => $safeScore > 0,
                 'review_score' => $safeScore,
                 'reviewed_by' => auth()->id(),
                 'reviewed_at' => now(),
             ]);
         }
 
-        $attempt->load('test.questions.choices', 'test.questions.matchingPairs', 'test.questions.sequenceItems', 'answers');
-        $totalPoints = 0.0;
-        $earned = 0.0;
-
-        foreach ($attempt->test->questions as $question) {
-            $questionPoints = (float) ($question->points ?? 1);
-            $totalPoints += $questionPoints;
-
-            $answers = $attempt->answers->where('question_id', $question->id);
-            if ($answers->isEmpty()) {
-                continue;
-            }
-
-            if ($question->type === 'single_choice') {
-                $correctChoiceId = $question->choices->firstWhere('is_correct', true)?->id;
-                if ($correctChoiceId && (int) $answers->first()->choice_id === (int) $correctChoiceId) {
-                    $earned += $questionPoints;
-                }
-            } elseif ($question->type === 'multiple_choice') {
-                $correctChoiceIds = $question->choices->where('is_correct', true)->pluck('id')->sort()->values()->toArray();
-                $selectedChoiceIds = $answers->pluck('choice_id')->sort()->values()->toArray();
-                if ($correctChoiceIds === $selectedChoiceIds) {
-                    $earned += $questionPoints;
-                }
-            } elseif ($question->type === 'text') {
-                $earned += (float) ($answers->first()->review_score ?? 0);
-            } elseif ($question->type === 'matching') {
-                $answerJson = $answers->first()?->answer_text;
-                $map = json_decode($answerJson ?? '', true);
-                if (is_array($map)) {
-                    $allCorrect = true;
-                    foreach ($question->matchingPairs as $pair) {
-                        $selected = $map[(string) $pair->id] ?? $map[$pair->id] ?? null;
-                        if ($selected === null || mb_strtolower(trim($selected)) !== mb_strtolower(trim($pair->right_text))) {
-                            $allCorrect = false;
-                            break;
-                        }
-                    }
-                    if ($allCorrect && $question->matchingPairs->isNotEmpty()) {
-                        $earned += $questionPoints;
-                    }
-                }
-            } elseif ($question->type === 'sequence') {
-                $payload = json_decode($answers->first()?->answer_text ?? '', true);
-                $userOrder = $payload['order'] ?? [];
-                $correctOrder = $question->sequenceItems->sortBy('correct_order')->pluck('id')->map(fn ($id) => (int) $id)->values()->toArray();
-                if ($userOrder && array_map('intval', $userOrder) === $correctOrder) {
-                    $earned += $questionPoints;
-                }
-            }
-        }
-
-        $percentage = $totalPoints > 0 ? round(($earned / $totalPoints) * 100, 2) : 0;
+        $percentage = app(AttemptScoringService::class)->recalculateAfterReview($attempt);
         $attempt->update(['score' => $percentage, 'pending_manual_review' => false]);
         return redirect()->route('teacher.reviews.index')->with('success', 'Ответы проверены');
     }

@@ -89,7 +89,7 @@
                                             ->map(fn($id) => $question->sequenceItems->firstWhere('id', (int)$id))
                                             ->filter();
                                     } else {
-                                        $seqItems = $seqItems->shuffle();
+                                        $seqItems = $question->sequenceItems->sortBy('correct_order')->values()->shuffle();
                                     }
                                 @endphp
                                 <p class="text-muted small mb-2"><i class="fas fa-arrows-alt-v me-1"></i>Перетащите элементы в правильном порядке (сверху вниз)</p>
@@ -105,17 +105,17 @@
                             @elseif($question->type == 'matching')
                                 @php
                                     $savedMatching = json_decode(optional($savedAnswers->get($question->id))->answer_text ?? '{}', true) ?: [];
-                                    $rightOptions = $question->matchingPairs->pluck('right_text')->shuffle();
+                                    $rightOptions = $question->matchingPairs->sortBy('order')->shuffle();
                                 @endphp
                                 <div class="matching-grid" data-question-id="{{ $question->id }}">
-                                    @foreach($question->matchingPairs as $pair)
+                                    @foreach($question->matchingPairs->sortBy('order') as $pair)
                                         <div class="matching-row">
                                             <div class="matching-left">{{ $pair->left_text }}</div>
                                             <div class="matching-right">
                                                 <select class="form-select matching-select" data-pair-id="{{ $pair->id }}" data-question-id="{{ $question->id }}">
-                                                    <option value="">— Выберите соответствие —</option>
-                                                    @foreach($rightOptions as $option)
-                                                        <option value="{{ $option }}" {{ ($savedMatching[$pair->id] ?? $savedMatching[(string)$pair->id] ?? '') === $option ? 'selected' : '' }}>{{ $option }}</option>
+                                                    <option value="">— Выберите —</option>
+                                                    @foreach($rightOptions as $opt)
+                                                        <option value="{{ $opt->id }}" {{ (string)($savedMatching[$pair->id] ?? $savedMatching[(string)$pair->id] ?? '') === (string)$opt->id ? 'selected' : '' }}>{{ $opt->right_text }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -281,25 +281,34 @@
 
             // Завершение теста
             document.getElementById('submit-test').addEventListener('click', function() {
-                if (confirm('Вы уверены, что хотите завершить тест?')) {
-                    fetch('{{ route("student.attempt.submit", $attempt) }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify({})
-                    }).then(response => response.json()).then(data => {
-                        if (data.success) {
-                            if (data.pending_manual_review) {
-                                alert('Тест отправлен. Есть текстовые ответы, они будут проверены преподавателем вручную.');
-                            }
-                            window.location.href = '{{ route("student.attempt.show", $attempt) }}';
-                        } else {
-                            alert('Ошибка при завершении теста');
-                        }
-                    });
-                }
+                if (!confirm('Вы уверены, что хотите завершить тест?')) return;
+                const btn = this;
+                btn.disabled = true;
+                btn.textContent = 'Завершение...';
+                fetch('{{ route("student.attempt.submit", $attempt) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = data.redirect || '{{ route("student.attempt.show", $attempt) }}';
+                    } else {
+                        alert(data.message || 'Ошибка при завершении теста');
+                        btn.disabled = false;
+                        btn.textContent = 'Завершить тест';
+                    }
+                })
+                .catch(() => {
+                    alert('Ошибка сети');
+                    btn.disabled = false;
+                    btn.textContent = 'Завершить тест';
+                });
             });
 
             updateProgress();

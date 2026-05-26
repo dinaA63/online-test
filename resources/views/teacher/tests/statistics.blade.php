@@ -5,9 +5,11 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <h1 class="display-6"><i class="fas fa-chart-line me-2" style="color: var(--primary);"></i>Статистика теста "{{ $test->title }}"</h1>
-        <a href="{{ route('teacher.tests.show', $test) }}" class="btn btn-secondary rounded-pill">
-            <i class="fas fa-arrow-left me-1"></i>Назад к тесту
-        </a>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ route('teacher.tests.export.csv', $test) }}" class="btn btn-outline-primary rounded-pill"><i class="fas fa-file-csv me-1"></i>CSV</a>
+            <a href="{{ route('teacher.tests.export.excel', $test) }}" class="btn btn-outline-primary rounded-pill"><i class="fas fa-file-excel me-1"></i>Excel</a>
+            <a href="{{ route('teacher.tests.show', $test) }}" class="btn btn-ghost rounded-pill"><i class="fas fa-arrow-left me-1"></i>Назад</a>
+        </div>
     </div>
 
     <!-- Карточки статистики -->

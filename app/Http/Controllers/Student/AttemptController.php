@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Test;
 use App\Models\Attempt;
 use App\Models\Answer;
+use App\Services\AttemptScoringService;
 use Illuminate\Http\Request;
 
 class AttemptController extends Controller
@@ -33,7 +34,12 @@ class AttemptController extends Controller
             if ($test->time_limit > 0) {
                 $elapsedMinutes = now()->diffInMinutes($existingAttempt->started_at);
                 if ($elapsedMinutes >= $test->time_limit) {
-                    $existingAttempt->update(['finished_at' => now(), 'score' => 0]);
+                    $evaluation = app(AttemptScoringService::class)->evaluate($existingAttempt);
+                    $existingAttempt->update([
+                        'finished_at' => now(),
+                        'score' => $evaluation['score'],
+                        'pending_manual_review' => $evaluation['pending_manual_review'],
+                    ]);
                     return redirect()->route('student.tests.index')
                         ->with('error', 'Время теста истекло.');
                 }
@@ -69,12 +75,13 @@ class AttemptController extends Controller
         if ($test->time_limit > 0) {
             $elapsedMinutes = now()->diffInMinutes($attempt->started_at);
             if ($elapsedMinutes >= $test->time_limit) {
-                $evaluation = $this->calculateScore($attempt);
+                $evaluation = app(AttemptScoringService::class)->evaluate($attempt);
                 $attempt->update([
                     'finished_at' => now(),
                     'score' => $evaluation['score'],
                     'pending_manual_review' => $evaluation['pending_manual_review'],
                 ]);
+
                 return redirect()->route('student.attempt.show', $attempt)
                     ->with('warning', 'Время теста истекло.');
             }
@@ -102,7 +109,7 @@ class AttemptController extends Controller
             return response()->json(['success' => false, 'message' => 'Тест уже завершён']);
         }
 
-        $evaluation = $this->calculateScore($attempt);
+        $evaluation = app(AttemptScoringService::class)->evaluate($attempt);
 
         $attempt->update([
             'finished_at' => now(),
@@ -112,6 +119,7 @@ class AttemptController extends Controller
 
         return response()->json([
             'success' => true,
+            'redirect' => route('student.attempt.show', $attempt),
             'pending_manual_review' => $evaluation['pending_manual_review'],
         ]);
     }
@@ -193,110 +201,4 @@ class AttemptController extends Controller
         return view('student.results', compact('attempts'));
     }
 
-    private function calculateScore(Attempt $attempt): array
-    {
-        $totalPoints = 0;
-        $earnedPoints = 0;
-        $pendingManualReview = false;
-
-        foreach ($attempt->test->questions as $question) {
-            $userAnswers = $attempt->answers()->where('question_id', $question->id)->get();
-            $questionPoints = $question->points ?? 1;
-
-            if ($userAnswers->isEmpty()) {
-                $totalPoints += $questionPoints;
-                continue;
-            }
-
-            $isCorrect = false;
-
-            if ($question->type === 'single_choice') {
-                $correctChoice = $question->choices()->where('is_correct', true)->first();
-                $selectedChoiceId = $userAnswers->first()->choice_id;
-                if ($correctChoice && $selectedChoiceId == $correctChoice->id) {
-                    $isCorrect = true;
-                }
-            } elseif ($question->type === 'multiple_choice') {
-                $correctChoiceIds = $question->choices()->where('is_correct', true)->pluck('id')->toArray();
-                $userChoiceIds = $userAnswers->pluck('choice_id')->toArray();
-                sort($correctChoiceIds);
-                sort($userChoiceIds);
-                if ($correctChoiceIds === $userChoiceIds) {
-                    $isCorrect = true;
-                }
-            } elseif ($question->type === 'text') {
-                $pendingManualReview = true;
-                $isCorrect = false;
-            } elseif ($question->type === 'matching') {
-                $isCorrect = $this->isMatchingAnswerCorrect($question, $userAnswers->first()?->answer_text);
-            } elseif ($question->type === 'sequence') {
-                $isCorrect = $this->isSequenceAnswerCorrect($question, $userAnswers->first()?->answer_text);
-            }
-
-            if ($isCorrect) {
-                $earnedPoints += $questionPoints;
-            }
-            $totalPoints += $questionPoints;
-        }
-
-        return [
-            'score' => $totalPoints > 0 ? round(($earnedPoints / $totalPoints) * 100, 2) : 0,
-            'pending_manual_review' => $pendingManualReview,
-        ];
-    }
-
-    private function isMatchingAnswerCorrect($question, ?string $answerJson): bool
-    {
-        if (!$answerJson) {
-            return false;
-        }
-
-        $userMap = json_decode($answerJson, true);
-        if (!is_array($userMap) || empty($userMap)) {
-            return false;
-        }
-
-        $pairs = $question->matchingPairs;
-        if ($pairs->isEmpty()) {
-            return false;
-        }
-
-        foreach ($pairs as $pair) {
-            $selected = $userMap[(string) $pair->id] ?? $userMap[$pair->id] ?? null;
-            if ($selected === null) {
-                return false;
-            }
-
-            if (mb_strtolower(trim($selected)) !== mb_strtolower(trim($pair->right_text))) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private function isSequenceAnswerCorrect($question, ?string $answerJson): bool
-    {
-        if (!$answerJson) {
-            return false;
-        }
-
-        $payload = json_decode($answerJson, true);
-        $userOrder = $payload['order'] ?? null;
-        if (!is_array($userOrder) || empty($userOrder)) {
-            return false;
-        }
-
-        $question->loadMissing('sequenceItems');
-        $correctOrder = $question->sequenceItems
-            ->sortBy('correct_order')
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->values()
-            ->toArray();
-
-        $userOrder = array_map('intval', $userOrder);
-
-        return $correctOrder === $userOrder;
-    }
 }

@@ -7,7 +7,9 @@
         <h1 class="display-6">{{ $test->title }}</h1>
         <div>
             <a href="{{ route('teacher.tests.edit', $test) }}" class="btn btn-outline-secondary"><i class="fas fa-edit"></i> Редактировать</a>
-            <a href="{{ route('teacher.tests.statistics', $test) }}" class="btn btn-info"><i class="fas fa-chart-bar"></i> Статистика</a>
+            <a href="{{ route('teacher.tests.statistics', $test) }}" class="btn btn-outline-primary"><i class="fas fa-chart-bar"></i> Статистика</a>
+            <a href="{{ route('teacher.tests.export.csv', $test) }}" class="btn btn-outline-primary"><i class="fas fa-file-csv"></i> CSV</a>
+            <a href="{{ route('teacher.tests.export.excel', $test) }}" class="btn btn-outline-primary"><i class="fas fa-file-excel"></i> Excel</a>
         </div>
     </div>
 

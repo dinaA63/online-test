@@ -67,7 +67,8 @@ Route::middleware(['auth', 'role:teacher'])->prefix('teacher')->name('teacher.')
 
     // Статистика и экспорт (для конкретного теста)
     Route::get('tests/{test}/statistics', [TestController::class, 'statistics'])->name('tests.statistics');
-    Route::get('tests/{test}/export', [TestController::class, 'export'])->name('tests.export');
+    Route::get('tests/{test}/export/csv', [TestController::class, 'exportCsv'])->name('tests.export.csv');
+    Route::get('tests/{test}/export/excel', [TestController::class, 'exportExcel'])->name('tests.export.excel');
 
     // Ручная проверка ответов
     Route::get('reviews', [\App\Http\Controllers\Teacher\ManualReviewController::class, 'index'])->name('reviews.index');

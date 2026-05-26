@@ -41,7 +41,13 @@
                     $isCorrect = true;
                     foreach ($question->matchingPairs as $pair) {
                         $selected = $map[(string)$pair->id] ?? $map[$pair->id] ?? null;
-                        if ($selected === null || mb_strtolower(trim($selected)) !== mb_strtolower(trim($pair->right_text))) {
+                        if ($selected === null) {
+                            $isCorrect = false;
+                            break;
+                        }
+                        if (is_numeric($selected)) {
+                            if ((int)$selected !== (int)$pair->id) { $isCorrect = false; break; }
+                        } elseif (mb_strtolower(trim($selected)) !== mb_strtolower(trim($pair->right_text))) {
                             $isCorrect = false;
                             break;
                         }
@@ -88,12 +94,14 @@
                                 @endforeach
                             </ol>
                         @elseif($question->type === 'matching')
-                            @php
-                                $map = json_decode($userAnswer->answer_text ?? '{}', true) ?: [];
-                            @endphp
+                            @php $map = json_decode($userAnswer->answer_text ?? '{}', true) ?: []; @endphp
                             <ul class="mb-0">
                                 @foreach($question->matchingPairs as $pair)
-                                    <li>{{ $pair->left_text }} → {{ $map[$pair->id] ?? $map[(string)$pair->id] ?? '—' }}</li>
+                                    @php
+                                        $sel = $map[$pair->id] ?? $map[(string)$pair->id] ?? null;
+                                        $selText = is_numeric($sel) ? ($question->matchingPairs->firstWhere('id', (int)$sel)?->right_text ?? '—') : $sel;
+                                    @endphp
+                                    <li>{{ $pair->left_text }} → {{ $selText ?: '—' }}</li>
                                 @endforeach
                             </ul>
                         @else

@@ -4,81 +4,76 @@
 
 @section('content')
 <div class="container py-4">
-    <div class="row">
-        <!-- Левая колонка: аватар и основные данные -->
-        <div class="col-md-4 mb-4">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body text-center">
-                    @if($user->avatar && Storage::disk('public')->exists($user->avatar))
-                        <img src="{{ asset('storage/' . $user->avatar) }}" 
-                             alt="Аватар" 
-                             class="rounded-circle img-fluid mb-3" 
-                             style="width: 150px; height: 150px; object-fit: cover;"
-                             onerror="this.onerror=null; this.src=''; this.outerHTML='<i class=\'fas fa-user-circle fa-7x text-muted mb-3\'></i>';">
-                    @else
-                        <i class="fas fa-user-circle fa-7x text-muted mb-3"></i>
-                    @endif
-                    <h4 class="fw-bold">{{ $user->name }}</h4>
-                    <p class="text-muted">{{ $user->email }}</p>
-                    <span class="badge bg-primary px-3 py-2">{{ $user->role }}</span>
-                    @if($user->groups && $user->groups->isNotEmpty())
-                        <p class="mt-2"><small class="text-muted">Группы: {{ $user->groups->pluck('name')->join(', ') }}</small></p>
-                    @endif
-                </div>
-            </div>
-        </div>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="stone-card">
+                <h2 class="h4 fw-bold mb-4">Профиль</h2>
 
-        <!-- Правая колонка: форма редактирования -->
-        <div class="col-md-8">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-header bg-white border-0 pt-4">
-                    <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Редактирование профиля</h4>
-                </div>
-                <div class="card-body">
-                    @if(session('success'))
-                        <div class="alert alert-success">{{ session('success') }}</div>
-                    @endif
-                    @if(session('error'))
-                        <div class="alert alert-danger">{{ session('error') }}</div>
-                    @endif
+                @if(session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+                @if(session('error'))
+                    <div class="alert alert-danger">{{ session('error') }}</div>
+                @endif
 
-                    <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
+                <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" id="profile-form">
+                    @csrf
 
-                        <div class="mb-3">
-                            <label for="bio" class="form-label fw-semibold">О себе</label>
-                            <textarea name="bio" id="bio" rows="4" 
-                                      class="form-control @error('bio') is-invalid @enderror" 
-                                      placeholder="Расскажите о себе...">{{ old('bio', $user->bio) }}</textarea>
-                            @error('bio')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                    <div class="avatar-upload-zone" id="avatar-zone" title="Нажмите, чтобы выбрать фото">
+                        @if($user->avatar && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->avatar))
+                            <img src="{{ asset('storage/' . $user->avatar) }}" alt="Аватар" id="avatar-preview">
+                        @else
+                            <div class="avatar-placeholder" id="avatar-preview-placeholder"><i class="fas fa-user"></i></div>
+                            <img src="" alt="" id="avatar-preview" class="d-none">
+                        @endif
+                        <input type="file" name="avatar" id="avatar" accept="image/jpeg,image/png,image/gif,image/webp">
+                    </div>
+                    <p class="avatar-hint mb-4">JPEG, PNG, GIF или WebP · до 2 МБ</p>
+                    @error('avatar')<div class="text-danger small mb-3">{{ $message }}</div>@enderror
 
-                        <div class="mb-3">
-                            <label for="avatar" class="form-label fw-semibold">Аватар (JPEG, PNG, GIF, SVG, max 2MB)</label>
-                            <input type="file" name="avatar" id="avatar" 
-                                   class="form-control @error('avatar') is-invalid @enderror" 
-                                   accept="image/jpeg,image/png,image/gif,image/svg+xml">
-                            <small class="form-text text-muted">
-                                @if($user->avatar)
-                                    Текущий файл: {{ $user->avatar }}
-                                @endif
-                            </small>
-                            @error('avatar')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                    <div class="mb-3">
+                        <p class="fw-bold mb-0">{{ $user->name }}</p>
+                        <p class="text-muted mb-0">{{ $user->email }}</p>
+                        <span class="badge rounded-pill mt-2" style="background: var(--primary-soft); color: var(--primary);">{{ $user->role }}</span>
+                    </div>
 
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>Сохранить изменения
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <div class="mb-4">
+                        <label for="bio" class="form-label fw-semibold">О себе</label>
+                        <textarea name="bio" id="bio" rows="4"
+                                  class="form-control @error('bio') is-invalid @enderror"
+                                  placeholder="Кратко о себе...">{{ old('bio', $user->bio) }}</textarea>
+                        @error('bio')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-pill">
+                        <i class="fas fa-save me-2"></i>Сохранить
+                    </button>
+                </form>
             </div>
         </div>
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.getElementById('avatar').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        let img = document.getElementById('avatar-preview');
+        const ph = document.getElementById('avatar-preview-placeholder');
+        if (!img) {
+            img = document.createElement('img');
+            img.id = 'avatar-preview';
+            document.getElementById('avatar-zone').prepend(img);
+        }
+        img.src = ev.target.result;
+        img.classList.remove('d-none');
+        if (ph) ph.remove();
+    };
+    reader.readAsDataURL(file);
+});
+</script>
+@endpush

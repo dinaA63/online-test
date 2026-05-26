@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Test;
 use Illuminate\Http\Request;
 use App\Models\Attempt;
+use App\Services\TestResultsExportService;
 use Illuminate\Support\Facades\Response;
-use League\Csv\Writer;
 
 class TestController extends Controller
 {
@@ -86,24 +86,34 @@ public function store(Request $request)
     return view('teacher.tests.statistics', compact('test', 'totalAttempts', 'averageScore', 'studentResults', 'scores'));
 }
 
-public function export(Test $test)
-{
-    $attempts = Attempt::where('test_id', $test->id)
-                       ->whereNotNull('finished_at')
-                       ->with('user')
-                       ->get();
-    $csv = Writer::createFromString('');
-    $csv->insertOne(['Студент', 'Результат (%)', 'Дата']);
-    foreach ($attempts as $attempt) {
-        $csv->insertOne([
-            $attempt->user->name,
-            round($attempt->score, 2),
-            $attempt->finished_at->format('d.m.Y H:i')
+    public function exportCsv(Test $test)
+    {
+        $this->authorizeTest($test);
+        $service = new TestResultsExportService();
+        $filename = 'results_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $test->title) . '.csv';
+
+        return Response::make($service->toCsv($test), 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }
-    return Response::make($csv->toString(), 200, [
-        'Content-Type' => 'text/csv',
-        'Content-Disposition' => "attachment; filename=\"stats_{$test->id}.csv\"",
-    ]);
-}
+
+    public function exportExcel(Test $test)
+    {
+        $this->authorizeTest($test);
+        $service = new TestResultsExportService();
+        $filename = 'results_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $test->title) . '.xls';
+
+        return Response::make($service->toExcelHtml($test), 200, [
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
+    private function authorizeTest(Test $test): void
+    {
+        if ($test->created_by !== auth()->id()) {
+            abort(403);
+        }
+    }
 }
