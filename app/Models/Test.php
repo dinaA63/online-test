@@ -17,5 +17,10 @@ class Test extends Model
         return $this->hasMany(Question::class);
     }
 
+    public function attempts()
+    {
+        return $this->hasMany(Attempt::class);
+    }
+
     public function group() { return $this->belongsTo(Group::class); }
 }

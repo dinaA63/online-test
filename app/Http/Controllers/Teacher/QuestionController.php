@@ -21,6 +21,7 @@ class QuestionController extends Controller
             'type' => 'required|in:single_choice,multiple_choice,text',
             'points' => 'nullable|integer|min:1',
             'order' => 'nullable|integer',
+            'correct_text' => 'nullable|string',
             'choices' => 'required_if:type,single_choice,multiple_choice|array',
             'choices.*.text' => 'required|string',
             'choices.*.is_correct' => 'sometimes|boolean',
@@ -31,6 +32,7 @@ class QuestionController extends Controller
             'type' => $validated['type'],
             'points' => $validated['points'] ?? 1,
             'order' => $validated['order'] ?? 0,
+            'correct_text' => $validated['type'] === 'text' ? ($validated['correct_text'] ?? null) : null,
         ]);
 
         if (isset($validated['choices']) && in_array($validated['type'], ['single_choice', 'multiple_choice'])) {
@@ -55,19 +57,34 @@ class QuestionController extends Controller
         $validated = $request->validate([
             'text' => 'required|string',
             'type' => 'required|in:single_choice,multiple_choice,text',
+            'points' => 'nullable|integer|min:1',
             'order' => 'nullable|integer',
+            'correct_text' => 'nullable|string',
             'choices' => 'required_if:type,single_choice,multiple_choice|array',
             'choices.*.id' => 'nullable|exists:choices,id',
             'choices.*.text' => 'required|string',
             'choices.*.is_correct' => 'sometimes|boolean',
-            'deleted_choices' => 'nullable|array',
-            'deleted_choices.*' => 'exists:choices,id',
+            'deleted_choices' => 'nullable',
         ]);
 
-        $question->update(['text' => $validated['text'], 'type' => $validated['type'], 'order' => $validated['order'] ?? 0]);
+        $question->update([
+            'text' => $validated['text'],
+            'type' => $validated['type'],
+            'points' => $validated['points'] ?? ($question->points ?? 1),
+            'order' => $validated['order'] ?? 0,
+            'correct_text' => $validated['type'] === 'text' ? ($validated['correct_text'] ?? null) : null,
+        ]);
 
-        if (!empty($validated['deleted_choices'])) {
-            \App\Models\Choice::whereIn('id', $validated['deleted_choices'])->delete();
+        $deletedChoices = $validated['deleted_choices'] ?? [];
+        if (is_string($deletedChoices)) {
+            $deletedChoices = array_filter(explode(',', $deletedChoices));
+        }
+        if (!is_array($deletedChoices)) {
+            $deletedChoices = [];
+        }
+
+        if (!empty($deletedChoices)) {
+            \App\Models\Choice::whereIn('id', $deletedChoices)->delete();
         }
 
         if (isset($validated['choices'])) {

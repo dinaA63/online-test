@@ -13,7 +13,14 @@ class TestController extends Controller
 {
     public function index()
     {
-        $tests = Test::where('created_by', auth()->id())->get();
+        $tests = Test::where('created_by', auth()->id())
+            ->withCount('questions')
+            ->withCount([
+                'attempts as pending_reviews_count' => function ($query) {
+                    $query->where('pending_manual_review', true)->whereNotNull('finished_at');
+                },
+            ])
+            ->get();
         return view('teacher.tests.index', compact('tests'));
     }
 

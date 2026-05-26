@@ -99,7 +99,7 @@
                 @endforelse
             </div>
             <div class="card-footer bg-white border-0 pb-4 text-end">
-                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                <button type="submit" class="btn btn-primary rounded-pill px-4" {{ $essayAnswers->isEmpty() ? 'disabled' : '' }}>
                     <i class="fas fa-save me-2"></i> Сохранить оценки и завершить проверку
                 </button>
             </div>

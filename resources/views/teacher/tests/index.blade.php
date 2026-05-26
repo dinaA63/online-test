@@ -28,8 +28,11 @@
                         <p class="card-text text-muted">{{ Str::limit($test->description, 100) }}</p>
                         <div class="d-flex justify-content-between align-items-center mt-3">
                             <div>
-                                <span class="badge bg-info me-1">Вопросов: {{ $test->questions->count() }}</span>
+                                <span class="badge bg-info me-1">Вопросов: {{ $test->questions_count }}</span>
                                 <span class="badge bg-secondary">Попыток: {{ $test->max_attempts }}</span>
+                                @if($test->pending_reviews_count > 0)
+                                    <span class="badge bg-warning text-dark mt-1">На проверке: {{ $test->pending_reviews_count }}</span>
+                                @endif
                             </div>
                             <div class="btn-group">
                                 <a href="{{ route('teacher.tests.show', $test) }}" class="btn btn-sm btn-outline-secondary">

@@ -28,10 +28,12 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3><i class="fas fa-list me-2"></i>Вопросы</h3>
-        <a href="{{ route('teacher.questions.create', $test) }}" class="btn btn-success"><i class="fas fa-plus"></i> Добавить вопрос</a>
-        <a href="{{ route('teacher.gift.import.create') }}?test_id={{ $test->id }}" class="btn btn-outline-secondary btn-sm ms-2">
-    <i class="fas fa-file-import"></i> Импорт GIFT
-</a>
+        <div class="d-flex gap-2">
+            <a href="{{ route('teacher.questions.create', $test) }}" class="btn btn-success"><i class="fas fa-plus"></i> Добавить вопрос</a>
+            <a href="{{ route('teacher.gift.import.create') }}?test_id={{ $test->id }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-file-import"></i> Импорт GIFT
+            </a>
+        </div>
     </div>
 
     @forelse($test->questions as $question)
@@ -56,6 +58,11 @@
                             <li>{{ $choice->text }} @if($choice->is_correct) <span class="badge bg-success">Правильный</span> @endif</li>
                         @endforeach
                     </ul>
+                @else
+                    <div class="mt-3 p-2 rounded bg-light">
+                        <small class="text-muted d-block mb-1">Эталонный ответ:</small>
+                        <span>{{ $question->correct_text ?: 'Не задан. Проверка полностью ручная.' }}</span>
+                    </div>
                 @endif
             </div>
         </div>

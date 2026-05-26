@@ -25,9 +25,14 @@
                         @if($completedTests->contains($test->id))
                             <span class="badge bg-success">Пройден</span>
                         @endif
+                        @if($pendingManualReviewTests->contains($test->id))
+                            <span class="badge bg-warning text-dark">Есть ответ на ручной проверке</span>
+                        @endif
                     </div>
                     <div class="card-footer bg-transparent">
-                        <a href="{{ route('student.tests.show', $test) }}" class="btn btn-primary w-100">Пройти тест</a>
+                        <a href="{{ route('student.tests.show', $test) }}" class="btn btn-primary w-100">
+                            {{ $completedTests->contains($test->id) ? 'Открыть тест' : 'Пройти тест' }}
+                        </a>
                     </div>
                 </div>
             </div>

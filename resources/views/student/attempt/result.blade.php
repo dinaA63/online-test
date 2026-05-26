@@ -6,6 +6,11 @@
     <h1 class="mb-4">{{ $attempt->test->title }} — Результаты</h1>
     <div class="alert alert-info">
         <strong>Ваш результат:</strong> {{ round($attempt->score, 2) }}%
+        @if($attempt->pending_manual_review)
+            <div class="mt-2">
+                <span class="badge bg-warning text-dark">Ожидается ручная проверка текстовых ответов</span>
+            </div>
+        @endif
     </div>
 
     @foreach($questions as $question)
@@ -25,18 +30,22 @@
                     ->sort()
                     ->values();
                 $isCorrect = $correctChoiceIds->toArray() == $userChoiceIds->toArray();
-            } elseif (in_array($question->type, ['text', 'essay'])) {
+            } elseif ($question->type === 'text') {
                 $correctText = $question->correct_text ?? '';
                 $userText = $userAnswer->answer_text ?? '';
-                // Сравниваем без учёта регистра и пробелов
-                $isCorrect = !empty($correctText) && strtolower(trim($userText)) === strtolower(trim($correctText));
+                $isCorrect = !$attempt->pending_manual_review
+                    && !empty($correctText)
+                    && strtolower(trim($userText)) === strtolower(trim($correctText));
             }
         @endphp
 
         <div class="card mb-3 border-{{ $isCorrect ? 'success' : 'danger' }}">
             <div class="card-body">
                 <h5 class="card-title">{{ $question->text }}</h5>
-                @if($isCorrect)
+                @if($question->type === 'text' && $attempt->pending_manual_review)
+                    <span class="badge bg-warning text-dark">На ручной проверке</span>
+                    <p class="mt-2"><strong>Ваш ответ:</strong> {{ $userAnswer->answer_text ?? 'Нет ответа' }}</p>
+                @elseif($isCorrect)
                     <span class="badge bg-success">Правильно</span>
                 @else
                     <span class="badge bg-danger">Неправильно</span>

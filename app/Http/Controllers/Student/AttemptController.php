@@ -69,7 +69,12 @@ class AttemptController extends Controller
         if ($test->time_limit > 0) {
             $elapsedMinutes = now()->diffInMinutes($attempt->started_at);
             if ($elapsedMinutes >= $test->time_limit) {
-                $attempt->update(['finished_at' => now(), 'score' => $this->calculateScore($attempt)]);
+                $evaluation = $this->calculateScore($attempt);
+                $attempt->update([
+                    'finished_at' => now(),
+                    'score' => $evaluation['score'],
+                    'pending_manual_review' => $evaluation['pending_manual_review'],
+                ]);
                 return redirect()->route('student.attempt.show', $attempt)
                     ->with('warning', 'Время теста истекло.');
             }
@@ -79,27 +84,36 @@ class AttemptController extends Controller
         }
 
         $questions = $test->questions()->with('choices')->get();
-        $savedAnswers = $attempt->answers()->get()->keyBy('question_id');
+        $allSavedAnswers = $attempt->answers()->get();
+        $savedAnswers = $allSavedAnswers->keyBy('question_id');
 
         return view('student.attempt.show', compact(
-            'attempt', 'test', 'questions', 'remainingSeconds', 'savedAnswers'
+            'attempt', 'test', 'questions', 'remainingSeconds', 'savedAnswers', 'allSavedAnswers'
         ));
     }
 
     public function submit(Attempt $attempt)
     {
+        if ($attempt->user_id !== auth()->id()) {
+            return response()->json(['success' => false, 'message' => 'Нет доступа'], 403);
+        }
+
         if ($attempt->finished_at) {
             return response()->json(['success' => false, 'message' => 'Тест уже завершён']);
         }
 
-        $score = $this->calculateScore($attempt);
+        $evaluation = $this->calculateScore($attempt);
 
         $attempt->update([
             'finished_at' => now(),
-            'score'       => $score,
+            'score' => $evaluation['score'],
+            'pending_manual_review' => $evaluation['pending_manual_review'],
         ]);
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'pending_manual_review' => $evaluation['pending_manual_review'],
+        ]);
     }
 
     public function saveAnswer(Request $request, Attempt $attempt)
@@ -139,11 +153,11 @@ class AttemptController extends Controller
                     'answer_text' => null,
                 ]);
             }
-        } elseif (in_array($question->type, ['text', 'essay']) && isset($data['answer_text'])) {
+        } elseif ($question->type === 'text' && array_key_exists('answer_text', $data)) {
             Answer::create([
                 'attempt_id'  => $attempt->id,
                 'question_id' => $data['question_id'],
-                'answer_text' => $data['answer_text'],
+                'answer_text' => trim((string) $data['answer_text']),
                 'choice_id'   => null,
             ]);
         }
@@ -161,10 +175,11 @@ class AttemptController extends Controller
         return view('student.results', compact('attempts'));
     }
 
-    private function calculateScore(Attempt $attempt): float
+    private function calculateScore(Attempt $attempt): array
     {
         $totalPoints = 0;
         $earnedPoints = 0;
+        $pendingManualReview = false;
 
         foreach ($attempt->test->questions as $question) {
             $userAnswers = $attempt->answers()->where('question_id', $question->id)->get();
@@ -191,15 +206,10 @@ class AttemptController extends Controller
                 if ($correctChoiceIds === $userChoiceIds) {
                     $isCorrect = true;
                 }
-            } elseif (in_array($question->type, ['text', 'essay'])) {
-                $correctText = $question->correct_text ?? '';
-                $userText = $userAnswers->first()->answer_text ?? '';
-                if (!empty($correctText) && strtolower(trim($userText)) === strtolower(trim($correctText))) {
-                    $isCorrect = true;
-                } else {
-                    // Для ручной проверки
-                    $isCorrect = false;
-                }
+            } elseif ($question->type === 'text') {
+                // Текстовые вопросы оцениваются вручную в кабинете преподавателя.
+                $pendingManualReview = true;
+                $isCorrect = false;
             }
 
             if ($isCorrect) {
@@ -208,6 +218,9 @@ class AttemptController extends Controller
             $totalPoints += $questionPoints;
         }
 
-        return $totalPoints > 0 ? round(($earnedPoints / $totalPoints) * 100, 2) : 0;
+        return [
+            'score' => $totalPoints > 0 ? round(($earnedPoints / $totalPoints) * 100, 2) : 0,
+            'pending_manual_review' => $pendingManualReview,
+        ];
     }
 }

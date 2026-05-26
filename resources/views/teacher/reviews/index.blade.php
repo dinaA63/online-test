@@ -8,6 +8,7 @@
             <i class="fas fa-clipboard-list me-2" style="color: var(--primary);"></i>
             Ручная проверка ответов
         </h1>
+        <span class="badge bg-warning text-dark fs-6">Ожидают проверки: {{ $pendingAttempts->count() }}</span>
     </div>
 
     @if(session('success'))

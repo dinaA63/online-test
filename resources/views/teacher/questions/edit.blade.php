@@ -46,6 +46,17 @@
                             <input type="hidden" name="deleted_choices" id="deletedChoices" value="">
                         </div>
 
+                        <div class="mb-3" id="correctTextBlock" style="display: {{ old('type', $question->type) === 'text' ? 'block' : 'none' }};">
+                            <label class="form-label fw-semibold">Эталонный ответ (необязательно)</label>
+                            <textarea name="correct_text" rows="3" class="form-control" placeholder="Используется как ориентир при ручной проверке.">{{ old('correct_text', $question->correct_text) }}</textarea>
+                            <div class="form-text">Текстовые ответы студентов проверяются вручную в личном кабинете преподавателя.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Баллы за вопрос</label>
+                            <input type="number" name="points" class="form-control" value="{{ old('points', $question->points ?? 1) }}" min="1">
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label">Порядок</label>
                             <input type="number" name="order" class="form-control" value="{{ old('order', $question->order) }}">
@@ -69,10 +80,13 @@
         const choicesBlock = document.getElementById('choicesBlock');
         const choicesContainer = document.getElementById('choicesContainer');
         const addButton = document.getElementById('addChoice');
+        const correctTextBlock = document.getElementById('correctTextBlock');
         let deletedIds = [];
 
         function toggleChoicesBlock() {
-            choicesBlock.style.display = typeSelect.value === 'text' ? 'none' : 'block';
+            const isText = typeSelect.value === 'text';
+            choicesBlock.style.display = isText ? 'none' : 'block';
+            correctTextBlock.style.display = isText ? 'block' : 'none';
         }
         typeSelect.addEventListener('change', toggleChoicesBlock);
         toggleChoicesBlock();

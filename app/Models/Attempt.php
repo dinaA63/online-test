@@ -9,9 +9,17 @@ class Attempt extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'test_id', 'score', 'started_at', 'finished_at'];
+    protected $fillable = [
+        'user_id',
+        'test_id',
+        'score',
+        'pending_manual_review',
+        'started_at',
+        'finished_at',
+    ];
 
     protected $casts = [
+        'pending_manual_review' => 'boolean',
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
     ];

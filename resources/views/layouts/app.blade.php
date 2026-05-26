@@ -33,6 +33,7 @@
                 {{-- Пункты в зависимости от роли --}}
                 @if(Auth::user()->role == 'teacher')
                     <li><a class="dropdown-item" href="{{ route('teacher.tests.index') }}"><i class="fas fa-tachometer-alt me-2"></i>Мои тесты</a></li>
+                    <li><a class="dropdown-item" href="{{ route('teacher.reviews.index') }}"><i class="fas fa-check-double me-2"></i>Ручная проверка</a></li>
                 @elseif(Auth::user()->role == 'student')
                     <li><a class="dropdown-item" href="{{ route('student.tests.index') }}"><i class="fas fa-list me-2"></i>Тесты</a></li>
                     <li><a class="dropdown-item" href="{{ route('student.results') }}"><i class="fas fa-chart-line me-2"></i>Мои результаты</a></li>

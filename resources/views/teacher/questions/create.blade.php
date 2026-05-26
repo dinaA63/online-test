@@ -47,6 +47,12 @@
                             <button type="button" id="addChoice" class="btn btn-sm btn-outline-primary mt-2"><i class="fas fa-plus"></i> Добавить вариант</button>
                         </div>
 
+                        <div class="mb-3" id="correctTextBlock" style="display: {{ old('type') === 'text' ? 'block' : 'none' }};">
+                            <label class="form-label fw-semibold">Эталонный ответ (необязательно)</label>
+                            <textarea name="correct_text" rows="3" class="form-control" placeholder="Можно оставить пустым. Проверка текстовых ответов выполняется вручную.">{{ old('correct_text') }}</textarea>
+                            <div class="form-text">Нужен как ориентир при проверке преподавателем.</div>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label">Порядок (необязательно)</label>
                             <input type="number" name="order" class="form-control" value="{{ old('order', 0) }}">
@@ -70,9 +76,12 @@
         const choicesBlock = document.getElementById('choicesBlock');
         const choicesContainer = document.getElementById('choicesContainer');
         const addButton = document.getElementById('addChoice');
+        const correctTextBlock = document.getElementById('correctTextBlock');
 
         function toggleChoicesBlock() {
-            choicesBlock.style.display = typeSelect.value === 'text' ? 'none' : 'block';
+            const isText = typeSelect.value === 'text';
+            choicesBlock.style.display = isText ? 'none' : 'block';
+            correctTextBlock.style.display = isText ? 'block' : 'none';
         }
         typeSelect.addEventListener('change', toggleChoicesBlock);
         toggleChoicesBlock();

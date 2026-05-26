@@ -22,15 +22,31 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>{{ $attempt->test->title }}</h2>
+        <div class="text-end">
+            <div class="small text-muted">Прогресс</div>
+            <div class="fw-semibold"><span id="answered-count">0</span> / {{ $questions->count() }}</div>
+        </div>
+    </div>
+    <div class="mb-3">
+        <div class="progress" role="progressbar" aria-label="Прогресс прохождения теста">
+            <div class="progress-bar" id="testProgressBar" style="width: 0%">0%</div>
+        </div>
     </div>
 
     @if($attempt->finished_at)
         <div class="alert alert-info">
             <h4>Тест завершён</h4>
             <p>Ваш результат: <strong>{{ round($attempt->score, 2) }}%</strong></p>
+            @if($attempt->pending_manual_review)
+                <p class="mb-0"><strong>Часть ответа ожидает ручной проверки преподавателем.</strong></p>
+            @endif
             <a href="{{ route('student.tests.index') }}" class="btn btn-primary">Вернуться к тестам</a>
         </div>
     @else
+        <div class="alert alert-light border d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-save me-2"></i>Ответы сохраняются автоматически</span>
+            <span class="text-muted small" id="saveStatus">Изменений пока нет</span>
+        </div>
         <div id="test-form">
             @csrf
             @foreach($questions as $question)
@@ -45,19 +61,24 @@
                             @if($question->type == 'single_choice')
                                 @foreach($question->choices as $choice)
                                     <div class="form-check">
-                                        <input class="form-check-input choice-radio" type="radio" name="question_{{$question->id}}" value="{{ $choice->id }}" data-question-id="{{ $question->id }}">
+                                        <input class="form-check-input choice-radio" type="radio" name="question_{{$question->id}}" value="{{ $choice->id }}" data-question-id="{{ $question->id }}"
+                                            {{ optional($savedAnswers->get($question->id))->choice_id == $choice->id ? 'checked' : '' }}>
                                         <label class="form-check-label">{{ $choice->text }}</label>
                                     </div>
                                 @endforeach
                             @elseif($question->type == 'multiple_choice')
+                                @php
+                                    $selectedChoices = $allSavedAnswers->where('question_id', $question->id)->pluck('choice_id')->toArray();
+                                @endphp
                                 @foreach($question->choices as $choice)
                                     <div class="form-check">
-                                        <input class="form-check-input choice-checkbox" type="checkbox" name="question_{{$question->id}}[]" value="{{ $choice->id }}" data-question-id="{{ $question->id }}">
+                                        <input class="form-check-input choice-checkbox" type="checkbox" name="question_{{$question->id}}[]" value="{{ $choice->id }}" data-question-id="{{ $question->id }}"
+                                            {{ in_array($choice->id, $selectedChoices, true) ? 'checked' : '' }}>
                                         <label class="form-check-label">{{ $choice->text }}</label>
                                     </div>
                                 @endforeach
                             @elseif($question->type == 'text')
-                                <textarea class="form-control text-answer" name="question_{{$question->id}}" data-question-id="{{ $question->id }}" rows="3" placeholder="Введите ответ..."></textarea>
+                                <textarea class="form-control text-answer" name="question_{{$question->id}}" data-question-id="{{ $question->id }}" rows="3" placeholder="Введите ответ...">{{ old("question_{$question->id}", optional($savedAnswers->get($question->id))->answer_text) }}</textarea>
                             @endif
                         </div>
                     </div>
@@ -70,7 +91,15 @@
         </div>
 
         <script>
+            const saveStatus = document.getElementById('saveStatus');
+
+            function setSaveStatus(text, muted = true) {
+                saveStatus.textContent = text;
+                saveStatus.classList.toggle('text-muted', muted);
+            }
+
             function saveAnswer(questionId, data) {
+                setSaveStatus('Сохранение...', false);
                 fetch('{{ route("student.attempt.save_answer", $attempt) }}', {
                     method: 'POST',
                     headers: {
@@ -78,7 +107,37 @@
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
                     body: JSON.stringify(data)
-                }).catch(err => console.error('Save error:', err));
+                })
+                .then(() => {
+                    setSaveStatus('Сохранено');
+                    updateProgress();
+                })
+                .catch(err => {
+                    setSaveStatus('Ошибка сохранения', false);
+                    console.error('Save error:', err);
+                });
+            }
+
+            function updateProgress() {
+                const total = {{ $questions->count() }};
+                let answered = 0;
+                document.querySelectorAll('.question-card').forEach(card => {
+                    const questionId = card.dataset.questionId;
+                    const hasRadio = !!document.querySelector(`.choice-radio[data-question-id="${questionId}"]:checked`);
+                    const hasChecks = document.querySelectorAll(`.choice-checkbox[data-question-id="${questionId}"]:checked`).length > 0;
+                    const textArea = document.querySelector(`.text-answer[data-question-id="${questionId}"]`);
+                    const hasText = textArea ? textArea.value.trim().length > 0 : false;
+                    if (hasRadio || hasChecks || hasText) {
+                        answered++;
+                    }
+                });
+
+                const percent = total > 0 ? Math.round((answered / total) * 100) : 0;
+                const bar = document.getElementById('testProgressBar');
+                const answeredCount = document.getElementById('answered-count');
+                bar.style.width = `${percent}%`;
+                bar.textContent = `${percent}%`;
+                answeredCount.textContent = answered;
             }
 
             // Одиночный выбор
@@ -103,9 +162,11 @@
                 textarea.addEventListener('input', function() {
                     let questionId = this.dataset.questionId;
                     clearTimeout(textTimeouts[questionId]);
+                    setSaveStatus('Изменения не сохранены', false);
                     textTimeouts[questionId] = setTimeout(() => {
                         saveAnswer(questionId, {question_id: questionId, answer_text: this.value});
                     }, 500);
+                    updateProgress();
                 });
             });
 
@@ -121,13 +182,18 @@
                         body: JSON.stringify({})
                     }).then(response => response.json()).then(data => {
                         if (data.success) {
-                            window.location.href = '{{ route("student.results") }}';
+                            if (data.pending_manual_review) {
+                                alert('Тест отправлен. Есть текстовые ответы, они будут проверены преподавателем вручную.');
+                            }
+                            window.location.href = '{{ route("student.attempt.show", $attempt) }}';
                         } else {
                             alert('Ошибка при завершении теста');
                         }
                     });
                 }
             });
+
+            updateProgress();
         </script>
     @endif
 </div>

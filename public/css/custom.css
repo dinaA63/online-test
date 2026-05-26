@@ -397,9 +397,16 @@ textarea.form-control {
 .question-card {
     border-left: 4px solid var(--primary);   /* из предыдущей версии */
 }
+.question-card .card-body {
+    scroll-margin-top: 110px;
+}
 .score-input {
     text-align: center;
 }
 .progress-bar {
     background-color: var(--primary);
+}
+#saveStatus {
+    min-width: 140px;
+    text-align: right;
 }
