@@ -13,7 +13,10 @@
                     <div class="tile-card-body">
                         <p class="mb-3">{{ Str::limit($test->description, 100) ?: 'Без описания' }}</p>
                         <div class="d-flex flex-wrap gap-1">
-                            <span class="badge-soft badge-soft-info">Вопросов: {{ $test->questions->count() }}</span>
+                            <span class="badge-soft badge-soft-info">Вопросов: {{ $test->questions_count }}</span>
+                            @if($test->group)
+                                <span class="badge-soft badge-soft-muted">{{ $test->group->name }}</span>
+                            @endif
                             <span class="badge-soft badge-soft-muted">Попыток: {{ $attemptsCount[$test->id] ?? 0 }}/{{ $test->max_attempts }}</span>
                             @if($completedTests->contains($test->id))
                                 <span class="badge-soft badge-soft-success">Пройден</span>

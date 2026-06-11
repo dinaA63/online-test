@@ -13,6 +13,11 @@ class AttemptController extends Controller
 {
     public function start(Test $test)
     {
+        if (!$test->isAccessibleBy(auth()->user())) {
+            return redirect()->route('student.tests.index')
+                ->with('error', 'Этот тест недоступен для вашей группы.');
+        }
+
         // Проверка лимита попыток
         $attemptsCount = Attempt::where('user_id', auth()->id())
             ->where('test_id', $test->id)

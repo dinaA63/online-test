@@ -23,7 +23,8 @@
         <div class="row g-3 text-muted small">
             <div class="col-md-4"><i class="fas fa-clock me-2"></i>{{ $test->time_limit ? $test->time_limit.' мин' : 'Без лимита' }}</div>
             <div class="col-md-4"><i class="fas fa-redo me-2"></i>Попыток: {{ $test->max_attempts }}</div>
-            <div class="col-md-4"><i class="fas fa-question-circle me-2"></i>Вопросов: {{ $test->questions->count() }}</div>
+            <div class="col-md-4"><i class="fas fa-users me-2"></i>Группа: {{ $test->group?->name ?? 'Все студенты' }}</div>
+            <div class="col-md-4 mt-2 mt-md-0"><i class="fas fa-question-circle me-2"></i>Вопросов: {{ $test->questions->count() }}</div>
         </div>
     </div>
 

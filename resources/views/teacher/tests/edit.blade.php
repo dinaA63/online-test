@@ -16,6 +16,15 @@
                 <label for="description" class="form-label fw-semibold">Описание</label>
                 <textarea name="description" id="description" rows="3" class="form-control">{{ old('description', $test->description) }}</textarea>
             </div>
+            <div class="mb-3">
+                <label for="group_id" class="form-label fw-semibold">Группа студентов</label>
+                <select name="group_id" id="group_id" class="form-select">
+                    <option value="">Все студенты</option>
+                    @foreach($groups as $group)
+                        <option value="{{ $group->id }}" {{ old('group_id', $test->group_id) == $group->id ? 'selected' : '' }}>{{ $group->name }}</option>
+                    @endforeach
+                </select>
+            </div>
             <div class="row g-3 mb-4">
                 <div class="col-md-6">
                     <label for="time_limit" class="form-label fw-semibold">Время (мин)</label>

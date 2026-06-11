@@ -12,6 +12,12 @@
     <div class="row justify-content-center">
         <div class="col-lg-9">
             <div class="stone-card">
+                @if($errors->any())
+                    <div class="alert alert-danger">
+                        <ul class="mb-0 ps-3">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+                    </div>
+                @endif
+
                 <form action="{{ route('teacher.questions.update', $question) }}" method="POST">
                     @csrf @method('PUT')
 
@@ -146,15 +152,23 @@
         let deletedPairIds = [];
         let deletedSequenceIds = [];
 
+        function setBlockActive(block, active) {
+            block.style.display = active ? 'block' : 'none';
+            block.querySelectorAll('input, select, textarea').forEach(el => {
+                if (el.type !== 'button' && el.type !== 'submit') el.disabled = !active;
+            });
+        }
+
         function toggleBlocks() {
             const type = typeSelect.value;
             const isText = type === 'text';
             const isMatching = type === 'matching';
             const isSequence = type === 'sequence';
-            choicesBlock.style.display = (!isText && !isMatching && !isSequence) ? 'block' : 'none';
-            matchingBlock.style.display = isMatching ? 'block' : 'none';
-            sequenceBlock.style.display = isSequence ? 'block' : 'none';
-            correctTextBlock.style.display = isText ? 'block' : 'none';
+            const isChoice = !isText && !isMatching && !isSequence;
+            setBlockActive(choicesBlock, isChoice);
+            setBlockActive(matchingBlock, isMatching);
+            setBlockActive(sequenceBlock, isSequence);
+            setBlockActive(correctTextBlock, isText);
         }
         typeSelect.addEventListener('change', toggleBlocks);
         toggleBlocks();

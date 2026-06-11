@@ -20,6 +20,9 @@
                         <div class="d-flex flex-wrap gap-1">
                             <span class="badge-soft badge-soft-info">Вопросов: {{ $test->questions_count }}</span>
                             <span class="badge-soft badge-soft-muted">Попыток: {{ $test->max_attempts }}</span>
+                            @if($test->group)
+                                <span class="badge-soft badge-soft-info">{{ $test->group->name }}</span>
+                            @endif
                             @if($test->pending_reviews_count > 0)
                                 <span class="badge-soft badge-soft-warning">На проверке: {{ $test->pending_reviews_count }}</span>
                             @endif
